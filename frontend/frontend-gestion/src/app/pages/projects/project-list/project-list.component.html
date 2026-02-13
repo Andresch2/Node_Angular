@@ -1,0 +1,86 @@
+<p-toast />
+
+<div class="card">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-3xl font-bold m-0">Proyectos</h2>
+    <p-button label="Nuevo Proyecto" icon="pi pi-plus" (onClick)="showDialog()">
+    </p-button>
+  </div>
+
+  <p-table [value]="projects()" [loading]="loading()" styleClass="p-datatable-striped">
+    <ng-template #header>
+      <tr>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Fecha Inicio</th>
+        <th>Fecha Fin</th>
+        <th style="inline-size: 180px">Acciones</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-project>
+      <tr>
+        <td>{{ project.name }}</td>
+        <td>{{ project.description || '-' }}</td>
+        <td>{{ project.startDate ? (project.startDate | date:'dd/MM/yyyy') : '-' }}</td>
+        <td>{{ project.endDate ? (project.endDate | date:'dd/MM/yyyy') : '-' }}</td>
+        <td>
+          <p-button icon="pi pi-eye" [text]="true" [rounded]="true" severity="info" (onClick)="viewProject(project.id)"
+            pTooltip="Ver detalles">
+          </p-button>
+          <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" severity="warn" (onClick)="editProject(project)"
+            pTooltip="Editar">
+          </p-button>
+          <p-button icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger"
+            (onClick)="deleteProject(project.id)" pTooltip="Eliminar">
+          </p-button>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="5" class="text-center py-8">
+          <i class="pi pi-inbox text-4xl text-muted-color mb-4 block"></i>
+          <p class="text-muted-color">No hay proyectos creados</p>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog [(visible)]="displayDialog" [modal]="true" [style]="{inline-size: '600px'}"
+  [header]="isEditing() ? 'Editar Proyecto' : 'Nuevo Proyecto'">
+  <div class="flex flex-col gap-4">
+    <div>
+      <label for="name" class="block mb-2 font-medium">Nombre *</label>
+      <input pInputText id="name" [(ngModel)]="newProject.name" class="w-full" placeholder="Nombre del proyecto" />
+    </div>
+
+    <div>
+      <label for="description" class="block mb-2 font-medium">Descripción</label>
+      <textarea pInputTextarea id="description" [(ngModel)]="newProject.description" rows="3" class="w-full"
+        placeholder="Descripción del proyecto">
+      </textarea>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label for="startDate" class="block mb-2 font-medium">Fecha Inicio</label>
+        <p-calendar [(ngModel)]="newProject.startDate" [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full">
+        </p-calendar>
+      </div>
+
+      <div>
+        <label for="endDate" class="block mb-2 font-medium">Fecha Fin</label>
+        <p-calendar [(ngModel)]="newProject.endDate" [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full">
+        </p-calendar>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" (onClick)="hideDialog()">
+    </p-button>
+    <p-button label="Guardar" [loading]="saving()" (onClick)="saveProject()">
+    </p-button>
+  </ng-template>
+</p-dialog>
