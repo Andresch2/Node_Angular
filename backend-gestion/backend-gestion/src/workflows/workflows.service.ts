@@ -1,7 +1,4 @@
-import {
-  // common
-  Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Workflow } from './domain/workflow';
 import { WorkflowNode } from './domain/workflow-node';
@@ -15,33 +12,33 @@ import { WorkflowRepository } from './infrastructure/persistence/workflow.reposi
 @Injectable()
 export class WorkflowsService {
   constructor(
-    // Dependencies here
     private readonly workflowRepository: WorkflowRepository,
     private readonly workflowNodeRepository: WorkflowNodeRepository,
-  ) {}
+  ) { }
 
-  // ========== Workflow CRUD ==========
+  // ==================== Workflow CRUD ====================
 
-  async create(createWorkflowDto: CreateWorkflowDto, user: Workflow['user']) {
+  async create(dto: CreateWorkflowDto, user: Workflow['user']) {
     return this.workflowRepository.create({
-      name: createWorkflowDto.name,
-      description: createWorkflowDto.description,
-      inngestEventName: createWorkflowDto.inngestEventName,
-      isActive: createWorkflowDto.isActive ?? true,
+      title: dto.title,
+      description: dto.description,
+      triggerType: dto.triggerType,
       user: user,
+      project: dto.projectId ? ({ id: dto.projectId } as any) : null,
     });
   }
 
   async findAllWithPagination({
     paginationOptions,
+    user,
   }: {
     paginationOptions: IPaginationOptions;
+    user: Workflow['user'];
   }) {
     return this.workflowRepository.findAllWithPagination({
-      paginationOptions: {
-        page: paginationOptions.page,
-        limit: paginationOptions.limit,
-      },
+      paginationOptions,
+      userId:
+        user?.role?.id === 1 ? undefined : (user?.id as unknown as string),
     });
   }
 
@@ -49,16 +46,11 @@ export class WorkflowsService {
     return this.workflowRepository.findById(id);
   }
 
-  findByIds(ids: Workflow['id'][]) {
-    return this.workflowRepository.findByIds(ids);
-  }
-
-  async update(id: Workflow['id'], updateWorkflowDto: UpdateWorkflowDto) {
+  async update(id: Workflow['id'], dto: UpdateWorkflowDto) {
     return this.workflowRepository.update(id, {
-      name: updateWorkflowDto.name,
-      description: updateWorkflowDto.description,
-      inngestEventName: updateWorkflowDto.inngestEventName,
-      isActive: updateWorkflowDto.isActive,
+      title: dto.title,
+      description: dto.description,
+      triggerType: dto.triggerType,
     });
   }
 
@@ -66,15 +58,20 @@ export class WorkflowsService {
     return this.workflowRepository.remove(id);
   }
 
-  // ========== WorkflowNode CRUD ==========
+  findByTriggerType(triggerType: string) {
+    return this.workflowRepository.findByTriggerType(triggerType);
+  }
 
-  async createNode(createWorkflowNodeDto: CreateWorkflowNodeDto) {
+  // ==================== WorkflowNode CRUD ====================
+
+  async createNode(dto: CreateWorkflowNodeDto) {
     return this.workflowNodeRepository.create({
-      name: createWorkflowNodeDto.name,
-      type: createWorkflowNodeDto.type,
-      config: createWorkflowNodeDto.config,
-      position: createWorkflowNodeDto.position,
-      workflowId: createWorkflowNodeDto.workflowId,
+      type: dto.type,
+      config: dto.config,
+      x: dto.x,
+      y: dto.y,
+      workflowId: dto.workflowId,
+      parentId: dto.parentId,
     });
   }
 
@@ -86,15 +83,13 @@ export class WorkflowsService {
     return this.workflowNodeRepository.findById(id);
   }
 
-  async updateNode(
-    id: WorkflowNode['id'],
-    updateWorkflowNodeDto: UpdateWorkflowNodeDto,
-  ) {
+  async updateNode(id: WorkflowNode['id'], dto: UpdateWorkflowNodeDto) {
     return this.workflowNodeRepository.update(id, {
-      name: updateWorkflowNodeDto.name,
-      type: updateWorkflowNodeDto.type,
-      config: updateWorkflowNodeDto.config,
-      position: updateWorkflowNodeDto.position,
+      type: dto.type,
+      config: dto.config,
+      x: dto.x,
+      y: dto.y,
+      parentId: dto.parentId,
     });
   }
 

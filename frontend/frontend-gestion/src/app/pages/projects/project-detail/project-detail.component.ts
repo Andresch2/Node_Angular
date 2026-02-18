@@ -6,14 +6,17 @@ import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { Project } from '../../../core/models/project.model';
 import { CreateTaskDto, Task, TaskStatus } from '../../../core/models/task.model';
+import { CreateWorkflowDto, Workflow } from '../../../core/models/workflow.model';
 import { ProjectService } from '../../../core/services/project.service';
 import { TaskService } from '../../../core/services/task.service';
+import { WorkflowService } from '../../../core/services/workflow.service';
 
 @Component({
   selector: 'app-project-detail',
@@ -27,7 +30,8 @@ import { TaskService } from '../../../core/services/task.service';
     InputTextModule,
     ToastModule,
     TagModule,
-    TooltipModule
+    TooltipModule,
+    SelectModule,
   ],
   providers: [MessageService],
   template: `
@@ -118,6 +122,79 @@ import { TaskService } from '../../../core/services/task.service';
       </p-table>
     </div>
 
+    <!-- Sección Workflows del Proyecto -->
+    <div class="card mt-4">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold m-0">
+          <i class="pi pi-sitemap mr-2"></i>Workflows del Proyecto
+        </h3>
+        <div class="flex gap-2">
+          <p-button
+            label="Crear Workflow"
+            icon="pi pi-plus"
+            severity="secondary"
+            (onClick)="createProjectWorkflow()" />
+          <p-button
+            label="Ejecutar Workflow"
+            icon="pi pi-play"
+            severity="help"
+            (onClick)="showWorkflowDialog()" />
+        </div>
+      </div>
+
+      <p-table
+        [value]="projectWorkflows()"
+        [loading]="loadingWorkflows()"
+        styleClass="p-datatable-striped">
+        <ng-template #header>
+          <tr>
+            <th>Nombre</th>
+            <th>Trigger</th>
+            <th>Estado</th>
+            <th style="width: 10rem">Acciones</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-wf>
+          <tr>
+            <td><strong>{{ wf.title }}</strong></td>
+            <td><code>{{ wf.triggerType }}</code></td>
+            <td>
+              <p-tag
+                value="Activo"
+                severity="success" />
+            </td>
+            <td>
+              <div class="flex gap-2">
+                <p-button
+                  icon="pi pi-sitemap"
+                  severity="success"
+                  [rounded]="true"
+                  [text]="true"
+                  pTooltip="Editor Visual"
+                  (onClick)="openWorkflowEditor(wf.id)" />
+                <p-button
+                  icon="pi pi-play"
+                  severity="help"
+                  [rounded]="true"
+                  [text]="true"
+                  pTooltip="Ejecutar"
+                  (onClick)="runSpecificWorkflow(wf.id)" />
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="4" class="text-center py-6">
+              <i class="pi pi-sitemap text-4xl text-muted-color mb-3 block"></i>
+              <p class="text-muted-color">No hay workflows asociados a este proyecto</p>
+              <p-button label="Crear primer workflow" icon="pi pi-plus" (onClick)="createProjectWorkflow()" />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
     <p-dialog 
       [(visible)]="displayDialog" 
       [modal]="true" 
@@ -170,6 +247,46 @@ import { TaskService } from '../../../core/services/task.service';
         </p-button>
       </ng-template>
     </p-dialog>
+
+    <!-- Dialog Workflow -->
+    <p-dialog 
+      [(visible)]="displayWorkflowDialog" 
+      [modal]="true" 
+      [style]="{width: '450px'}"
+      header="Ejecutar Workflow">
+      <div class="flex flex-col gap-4">
+        <p class="text-muted-color">Selecciona un workflow manual para ejecutar en este proyecto.</p>
+        
+        <div class="flex flex-column gap-2">
+            <label class="font-medium">Workflow</label>
+            <p-select 
+                [options]="availableWorkflows" 
+                [(ngModel)]="selectedWorkflowId"
+                optionLabel="title" 
+                optionValue="id" 
+                placeholder="Seleccionar..."
+                [style]="{'width':'100%'}"
+                appendTo="body">
+            </p-select>
+        </div>
+      </div>
+
+      <ng-template #footer>
+        <p-button 
+          label="Cancelar" 
+          severity="secondary" 
+          [text]="true"
+          (onClick)="displayWorkflowDialog=false">
+        </p-button>
+        <p-button 
+          label="Ejecutar" 
+          icon="pi pi-play"
+          [loading]="executingWorkflow()"
+          (onClick)="runWorkflow()"
+          [disabled]="!selectedWorkflowId">
+        </p-button>
+      </ng-template>
+    </p-dialog>
   `,
   styles: []
 })
@@ -181,6 +298,18 @@ export class ProjectDetailComponent implements OnInit {
   isEditing = false;
   editingTaskId: string | null = null;
   saving = signal(false);
+
+  // Workflow execution
+  displayWorkflowDialog = false;
+  availableWorkflows: Workflow[] = [];
+  selectedWorkflowId: string | null = null;
+  executingWorkflow = signal(false);
+  targetTaskId: string | null = null;
+
+  // Lista de workflows del proyecto
+  projectWorkflows = signal<Workflow[]>([]);
+  loadingWorkflows = signal(false);
+
 
   projectId: string = '';
 
@@ -197,13 +326,15 @@ export class ProjectDetailComponent implements OnInit {
     private router: Router,
     private projectService: ProjectService,
     private taskService: TaskService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private workflowService: WorkflowService
   ) { }
 
   ngOnInit() {
     this.projectId = this.route.snapshot.params['id'];
     this.loadProject();
     this.loadTasks();
+    this.loadProjectWorkflows();
   }
 
   loadProject() {
@@ -407,5 +538,111 @@ export class ProjectDetailComponent implements OnInit {
       description: null,
       status: TaskStatus.PENDIENTE
     };
+  }
+
+  showWorkflowDialog(taskId?: string) {
+    this.targetTaskId = taskId || null;
+    this.loading.set(true);
+    this.workflowService.getWorkflows(1, 100).subscribe({
+      next: (res: any) => {
+        this.availableWorkflows = res.data || [];
+        this.displayWorkflowDialog = true;
+        this.loading.set(false);
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los workflows' });
+        this.loading.set(false);
+      }
+    });
+  }
+
+  loadProjectWorkflows() {
+    this.loadingWorkflows.set(true);
+    this.workflowService.getWorkflows(1, 100).subscribe({
+      next: (res: any) => {
+        this.projectWorkflows.set(res.data || []);
+        this.loadingWorkflows.set(false);
+      },
+      error: () => {
+        this.loadingWorkflows.set(false);
+      }
+    });
+  }
+
+  createProjectWorkflow() {
+    const dto: CreateWorkflowDto = {
+      title: `Workflow - ${this.project()?.name || 'Proyecto'}`,
+      description: `Workflow automático para el proyecto ${this.project()?.name}`,
+      triggerType: 'webhook',
+      projectId: this.project()?.id,
+    };
+    this.workflowService.createWorkflow(dto).subscribe({
+      next: (wf: any) => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Éxito',
+          detail: 'Workflow creado. Abre el editor para configurar los nodos.'
+        });
+        this.loadProjectWorkflows();
+        this.router.navigate(['/workflows', wf.id, 'editor']);
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo crear el workflow' });
+      }
+    });
+  }
+
+  openWorkflowEditor(id: string) {
+    this.router.navigate(['/workflows', id, 'editor']);
+  }
+
+  runSpecificWorkflow(workflowId: string) {
+    this.executingWorkflow.set(true);
+    this.workflowService.executeWorkflow(workflowId, { projectId: this.projectId }).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Iniciado',
+          detail: 'El workflow se ha iniciado correctamente'
+        });
+        this.executingWorkflow.set(false);
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo iniciar el workflow' });
+        this.executingWorkflow.set(false);
+      }
+    });
+  }
+
+  runWorkflow() {
+    if (!this.selectedWorkflowId) return;
+
+    this.executingWorkflow.set(true);
+
+    const payload: any = { projectId: this.projectId };
+    if (this.targetTaskId) {
+      payload.taskId = this.targetTaskId;
+    }
+
+    this.workflowService.executeWorkflow(this.selectedWorkflowId, payload)
+      .subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Iniciado',
+            detail: 'El workflow se ha iniciado correctamente'
+          });
+          this.displayWorkflowDialog = false;
+          this.executingWorkflow.set(false);
+        },
+        error: (err) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudo iniciar el workflow'
+          });
+          this.executingWorkflow.set(false);
+        }
+      });
   }
 }

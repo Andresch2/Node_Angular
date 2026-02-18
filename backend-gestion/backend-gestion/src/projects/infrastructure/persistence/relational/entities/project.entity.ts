@@ -1,8 +1,11 @@
 import { TaskEntity } from 'src/tasks/infrastructure/persistence/relational/entities/task.entity';
+import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
+import { WorkflowEntity } from 'src/workflows/infrastructure/persistence/relational/entities/workflow.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -45,6 +48,18 @@ export class ProjectEntity extends EntityRelationalHelper {
     cascade: true,
   })
   tasks?: TaskEntity[];
+
+  // Relación con Workflows (One-to-Many)
+  @OneToMany(
+    () => WorkflowEntity,
+    (workflow: WorkflowEntity) => workflow.project,
+  )
+  workflows?: WorkflowEntity[];
+
+  @ManyToOne(() => UserEntity, {
+    eager: true,
+  })
+  user?: UserEntity | null;
 
   @CreateDateColumn()
   createdAt: Date;

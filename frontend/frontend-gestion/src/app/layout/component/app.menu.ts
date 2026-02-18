@@ -63,6 +63,12 @@ export class AppMenu {
                         data: { roles: [RoleEnum.ADMIN, RoleEnum.USER] }
                     },
                     {
+                        label: 'Workflows',
+                        icon: 'pi pi-fw pi-sitemap',
+                        routerLink: ['/workflows'],
+                        data: { roles: [RoleEnum.ADMIN, RoleEnum.USER] }
+                    },
+                    {
                         label: 'Landing',
                         icon: 'pi pi-fw pi-globe',
                         routerLink: ['/landing']

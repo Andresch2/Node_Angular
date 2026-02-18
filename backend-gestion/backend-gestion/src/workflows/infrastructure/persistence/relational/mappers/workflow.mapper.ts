@@ -1,41 +1,44 @@
-import { UserMapper } from '../../../../../users/infrastructure/persistence/relational/mappers/user.mapper';
 import { Workflow } from '../../../../domain/workflow';
 import { WorkflowEntity } from '../entities/workflow.entity';
 
 export class WorkflowMapper {
-  static toDomain(raw: WorkflowEntity): Workflow {
-    const domainEntity = new Workflow();
-    domainEntity.id = raw.id;
-    domainEntity.name = raw.name;
-    domainEntity.description = raw.description;
-    domainEntity.inngestEventName = raw.inngestEventName;
-    domainEntity.isActive = raw.isActive;
-    domainEntity.createdAt = raw.createdAt;
-    domainEntity.updatedAt = raw.updatedAt;
+  static toDomain(entity: WorkflowEntity): Workflow {
+    const domain = new Workflow();
+    domain.id = entity.id;
+    domain.title = entity.title;
+    domain.description = entity.description;
+    domain.triggerType = entity.triggerType;
+    domain.createdAt = entity.createdAt;
+    domain.updatedAt = entity.updatedAt;
 
-    if (raw.user) {
-      domainEntity.user = UserMapper.toDomain(raw.user);
+    if (entity.user) {
+      domain.user = {
+        id: Number(entity.user.id),
+        email: entity.user.email,
+        firstName: entity.user.firstName,
+        lastName: entity.user.lastName,
+      } as any;
     }
 
-    return domainEntity;
+    if (entity.project) {
+      domain.project = {
+        id: entity.project.id,
+        name: entity.project.name,
+      } as any;
+    }
+
+    return domain;
   }
 
-  static toPersistence(domainEntity: Workflow): WorkflowEntity {
-    const persistenceEntity = new WorkflowEntity();
-    persistenceEntity.name = domainEntity.name;
-    persistenceEntity.description = domainEntity.description;
-    persistenceEntity.inngestEventName = domainEntity.inngestEventName;
-    persistenceEntity.isActive = domainEntity.isActive;
-    if (domainEntity.id) {
-      persistenceEntity.id = domainEntity.id;
-    }
-    persistenceEntity.createdAt = domainEntity.createdAt;
-    persistenceEntity.updatedAt = domainEntity.updatedAt;
-
-    if (domainEntity.user) {
-      persistenceEntity.user = UserMapper.toPersistence(domainEntity.user);
-    }
-
-    return persistenceEntity;
+  static toPersistence(domain: Partial<Workflow>): Partial<WorkflowEntity> {
+    const entity: Partial<WorkflowEntity> = {};
+    if (domain.title !== undefined) entity.title = domain.title;
+    if (domain.description !== undefined)
+      entity.description = domain.description;
+    if (domain.triggerType !== undefined)
+      entity.triggerType = domain.triggerType;
+    if (domain.user !== undefined) entity.user = domain.user as any;
+    if (domain.project !== undefined) entity.project = domain.project as any;
+    return entity;
   }
 }

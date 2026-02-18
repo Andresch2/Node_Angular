@@ -25,12 +25,15 @@ export class ProjectRelationalRepository implements ProjectRepository {
 
   async findAllWithPagination({
     paginationOptions,
+    userId,
   }: {
     paginationOptions: IPaginationOptions;
+    userId?: string;
   }): Promise<{ data: Project[]; total: number }> {
     const [entities, total] = await this.projectRepository.findAndCount({
       skip: (paginationOptions.page - 1) * paginationOptions.limit,
       take: paginationOptions.limit,
+      where: userId ? { user: { id: userId as any } } : {},
       order: {
         createdAt: 'DESC',
       },

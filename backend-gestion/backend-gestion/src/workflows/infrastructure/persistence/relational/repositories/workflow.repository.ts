@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
-import { NullableType } from '../../../../../utils/types/nullable.type';
+import { Repository } from 'typeorm';
 import { IPaginationOptions } from '../../../../../utils/types/pagination-options';
 import { Workflow } from '../../../../domain/workflow';
 import { WorkflowRepository } from '../../workflow.repository';
@@ -9,80 +8,63 @@ import { WorkflowEntity } from '../entities/workflow.entity';
 import { WorkflowMapper } from '../mappers/workflow.mapper';
 
 @Injectable()
-export class WorkflowRelationalRepository implements WorkflowRepository {
+export class RelationalWorkflowRepository extends WorkflowRepository {
   constructor(
     @InjectRepository(WorkflowEntity)
-    private readonly workflowRepository: Repository<WorkflowEntity>,
-  ) {}
-
-  async create(data: Workflow): Promise<Workflow> {
-    const persistenceModel = WorkflowMapper.toPersistence(data);
-    const newEntity = await this.workflowRepository.save(
-      this.workflowRepository.create(persistenceModel),
-    );
-    return WorkflowMapper.toDomain(newEntity);
+    private readonly repo: Repository<WorkflowEntity>,
+  ) {
+    super();
   }
 
-  async findAllWithPagination({
-    paginationOptions,
-  }: {
+  async create(
+    data: Omit<Workflow, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<Workflow> {
+    const entity = this.repo.create(WorkflowMapper.toPersistence(data));
+    const saved = await this.repo.save(entity);
+    return WorkflowMapper.toDomain(saved);
+  }
+
+  async findAllWithPagination(options: {
     paginationOptions: IPaginationOptions;
+    userId?: string;
   }): Promise<{ data: Workflow[]; total: number }> {
-    const [entities, total] = await this.workflowRepository.findAndCount({
-      skip: (paginationOptions.page - 1) * paginationOptions.limit,
-      take: paginationOptions.limit,
-      order: {
-        createdAt: 'DESC',
-      },
+    const where: any = {};
+    if (options.userId) {
+      where.user = { id: options.userId };
+    }
+
+    const [entities, total] = await this.repo.findAndCount({
+      where,
+      skip:
+        (options.paginationOptions.page - 1) * options.paginationOptions.limit,
+      take: options.paginationOptions.limit,
+      order: { createdAt: 'DESC' },
     });
 
     return {
-      data: entities.map((entity) => WorkflowMapper.toDomain(entity)),
+      data: entities.map(WorkflowMapper.toDomain),
       total,
     };
   }
 
-  async findById(id: Workflow['id']): Promise<NullableType<Workflow>> {
-    const entity = await this.workflowRepository.findOne({
-      where: { id },
-    });
-
+  async findById(id: string): Promise<Workflow | null> {
+    const entity = await this.repo.findOne({ where: { id } });
     return entity ? WorkflowMapper.toDomain(entity) : null;
   }
 
-  async findByIds(ids: Workflow['id'][]): Promise<Workflow[]> {
-    const entities = await this.workflowRepository.find({
-      where: { id: In(ids) },
+  async findByTriggerType(triggerType: string): Promise<Workflow[]> {
+    const entities = await this.repo.find({
+      where: { triggerType: triggerType as any },
     });
-
-    return entities.map((entity) => WorkflowMapper.toDomain(entity));
+    return entities.map(WorkflowMapper.toDomain);
   }
 
-  async update(
-    id: Workflow['id'],
-    payload: Partial<Workflow>,
-  ): Promise<Workflow> {
-    const entity = await this.workflowRepository.findOne({
-      where: { id },
-    });
-
-    if (!entity) {
-      throw new Error('Record not found');
-    }
-
-    const updatedEntity = await this.workflowRepository.save(
-      this.workflowRepository.create(
-        WorkflowMapper.toPersistence({
-          ...WorkflowMapper.toDomain(entity),
-          ...payload,
-        }),
-      ),
-    );
-
-    return WorkflowMapper.toDomain(updatedEntity);
+  async update(id: string, data: Partial<Workflow>): Promise<Workflow | null> {
+    await this.repo.update(id, WorkflowMapper.toPersistence(data));
+    return this.findById(id);
   }
 
-  async remove(id: Workflow['id']): Promise<void> {
-    await this.workflowRepository.delete(id);
+  async remove(id: string): Promise<void> {
+    await this.repo.delete(id);
   }
 }

@@ -16,6 +16,7 @@ import { inngest } from './inngest/client';
 import { getInngestFunctions } from './inngest/functions';
 import { ResolvePromisesInterceptor } from './utils/serializer.interceptor';
 import validationOptions from './utils/validation-options';
+import { WorkflowEngineService } from './workflows/engine/workflow-engine.service';
 import { WorkflowsService } from './workflows/workflows.service';
 
 async function bootstrap() {
@@ -46,9 +47,13 @@ async function bootstrap() {
     new ClassSerializerInterceptor(app.get(Reflector)),
   );
 
-  // Inngest: inyectar dependencias NestJS y montar el serve handler
+  // Inngest: inyectar dependencias NestJS y montar serve handler
   const workflowsService = app.get(WorkflowsService);
-  const inngestFunctions = getInngestFunctions({ workflowsService });
+  const workflowEngineService = app.get(WorkflowEngineService);
+  const inngestFunctions = getInngestFunctions({
+    workflowsService,
+    workflowEngineService,
+  });
   app.use(
     '/api/inngest',
     serve({

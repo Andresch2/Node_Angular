@@ -10,8 +10,10 @@ export abstract class ProjectRepository {
 
   abstract findAllWithPagination({
     paginationOptions,
+    userId,
   }: {
     paginationOptions: IPaginationOptions;
+    userId?: string;
   }): Promise<{ data: Project[]; total: number }>;
 
   abstract findById(id: Project['id']): Promise<NullableType<Project>>;

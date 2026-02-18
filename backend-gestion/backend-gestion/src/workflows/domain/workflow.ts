@@ -1,46 +1,33 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Project } from '../../projects/domain/project';
 import { User } from '../../users/domain/user';
 
 export class Workflow {
-  @ApiProperty({
-    type: String,
-  })
+  @ApiProperty({ type: String })
   id: string;
 
-  @ApiProperty({
-    type: String,
-    nullable: false,
-  })
-  name: string;
+  @ApiProperty({ type: String })
+  title: string;
 
-  @ApiProperty({
-    type: String,
-    nullable: true,
-  })
+  @ApiProperty({ type: String, nullable: true })
   description?: string | null;
 
   @ApiProperty({
     type: String,
-    nullable: false,
-    description: 'Nombre del evento Inngest que dispara este workflow',
+    enum: ['webhook', 'http'],
+    description: 'Tipo de trigger del workflow',
   })
-  inngestEventName: string;
+  triggerType: 'webhook' | 'http';
 
-  @ApiProperty({
-    type: Boolean,
-    default: true,
-    description: 'Si el workflow está activo',
-  })
-  isActive: boolean;
+  @ApiProperty({ type: () => User })
+  user?: User | null;
+
+  @ApiProperty({ type: () => Project })
+  project?: Project | null;
 
   @ApiProperty()
   createdAt: Date;
 
   @ApiProperty()
   updatedAt: Date;
-
-  @ApiProperty({
-    type: () => User,
-  })
-  user?: User | null;
 }

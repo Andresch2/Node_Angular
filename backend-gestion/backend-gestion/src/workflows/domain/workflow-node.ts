@@ -1,27 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-
-export enum WorkflowNodeType {
-  ACTION = 'ACTION',
-  CONDITION = 'CONDITION',
-  DELAY = 'DELAY',
-  NOTIFICATION = 'NOTIFICATION',
-}
+import { WorkflowNodeType } from './workflow-node-type.enum';
 
 export class WorkflowNode {
-  @ApiProperty({
-    type: String,
-  })
+  @ApiProperty({ type: String })
   id: string;
 
   @ApiProperty({
-    type: String,
-    nullable: false,
-  })
-  name: string;
-
-  @ApiProperty({
     enum: WorkflowNodeType,
-    example: WorkflowNodeType.ACTION,
     description: 'Tipo de nodo del workflow',
   })
   type: WorkflowNodeType;
@@ -29,21 +14,25 @@ export class WorkflowNode {
   @ApiProperty({
     type: Object,
     nullable: true,
-    description: 'Configuración JSON del nodo (parámetros, duración, etc.)',
+    description: 'Configuración JSON del nodo',
   })
   config?: Record<string, any> | null;
 
-  @ApiProperty({
-    type: Number,
-    description: 'Orden de ejecución en el workflow',
-  })
-  position: number;
+  @ApiProperty({ type: Number, description: 'Posición X en el canvas' })
+  x: number;
+
+  @ApiProperty({ type: Number, description: 'Posición Y en el canvas' })
+  y: number;
+
+  @ApiProperty({ type: String, description: 'ID del workflow asociado' })
+  workflowId: string;
 
   @ApiProperty({
     type: String,
-    description: 'ID del workflow asociado',
+    nullable: true,
+    description: 'ID del nodo padre (null = nodo raíz)',
   })
-  workflowId: string;
+  parentId?: string | null;
 
   @ApiProperty()
   createdAt: Date;

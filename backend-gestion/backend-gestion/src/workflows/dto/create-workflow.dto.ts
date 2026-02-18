@@ -1,45 +1,32 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateWorkflowDto {
-  @ApiProperty({
-    required: true,
-    type: String,
-    example: 'Workflow de aprobación',
-    description: 'Nombre del workflow',
-  })
+  @ApiProperty({ example: 'Mi Workflow' })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  title: string;
 
-  @ApiProperty({
-    required: false,
-    type: String,
-    example: 'Workflow para aprobar solicitudes de compra',
-    description: 'Descripción del workflow',
-    nullable: true,
-  })
-  @IsOptional()
+  @ApiProperty({ example: 'Descripción del workflow', required: false })
   @IsString()
+  @IsOptional()
   description?: string | null;
 
-  @ApiProperty({
-    required: true,
-    type: String,
-    example: 'workflow/approval.requested',
-    description: 'Nombre del evento Inngest que dispara este workflow',
+  @ApiProperty({ enum: ['webhook', 'http'], example: 'webhook' })
+  @IsEnum(['webhook', 'http'], {
+    message: 'triggerType debe ser webhook o http',
   })
-  @IsString()
   @IsNotEmpty()
-  inngestEventName: string;
+  triggerType: 'webhook' | 'http';
 
-  @ApiProperty({
-    required: false,
-    type: Boolean,
-    default: true,
-    description: 'Si el workflow está activo',
-  })
+  @ApiProperty({ example: 'uuid-del-proyecto', required: false })
+  @IsUUID()
   @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+  projectId?: string;
 }

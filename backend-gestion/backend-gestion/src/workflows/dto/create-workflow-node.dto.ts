@@ -1,61 +1,45 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
   IsObject,
   IsOptional,
-  IsString,
+  IsUUID,
+  ValidateIf
 } from 'class-validator';
-import { WorkflowNodeType } from '../domain/workflow-node';
+import { WorkflowNodeType } from '../domain/workflow-node-type.enum';
 
 export class CreateWorkflowNodeDto {
-  @ApiProperty({
-    required: true,
-    type: String,
-    example: 'Enviar notificación',
-    description: 'Nombre del nodo',
-  })
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @ApiProperty({
-    required: true,
-    enum: WorkflowNodeType,
-    example: WorkflowNodeType.ACTION,
-    description: 'Tipo de nodo del workflow',
-  })
+  @ApiProperty({ enum: WorkflowNodeType, example: WorkflowNodeType.ACTION })
   @IsEnum(WorkflowNodeType)
   @IsNotEmpty()
   type: WorkflowNodeType;
 
-  @ApiProperty({
-    required: false,
+  @ApiPropertyOptional({
     type: Object,
-    example: { action: 'sendEmail', to: 'admin@example.com' },
-    description: 'Configuración JSON del nodo',
-    nullable: true,
+    example: { url: 'https://example.com' },
   })
-  @IsOptional()
   @IsObject()
+  @IsOptional()
   config?: Record<string, any> | null;
 
-  @ApiProperty({
-    required: true,
-    type: Number,
-    example: 1,
-    description: 'Orden de ejecución en el workflow',
-  })
+  @ApiProperty({ type: Number, example: 100 })
   @IsNumber()
-  position: number;
+  x: number;
 
-  @ApiProperty({
-    required: true,
-    type: String,
-    description: 'ID del workflow asociado',
-  })
-  @IsString()
+  @ApiProperty({ type: Number, example: 200 })
+  @IsNumber()
+  y: number;
+
+  @ApiProperty({ type: String })
+  @IsUUID()
   @IsNotEmpty()
   workflowId: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @ValidateIf((o) => o.parentId !== null)
+  @IsUUID()
+  @IsOptional()
+  parentId?: string | null;
 }

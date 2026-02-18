@@ -50,6 +50,18 @@ export const appRoutes: Routes = [
                 loadComponent: () => import('./app/pages/projects/project-detail/project-detail.component').then(m => m.ProjectDetailComponent),
                 canActivate: [hasRoleGuard],
                 data: { roles: [RoleEnum.ADMIN, RoleEnum.USER] }
+            },
+            {
+                path: 'workflows',
+                loadComponent: () => import('./app/pages/workflows/workflow-list/workflow-list.component').then(m => m.WorkflowListComponent),
+                canActivate: [hasRoleGuard],
+                data: { roles: [RoleEnum.ADMIN, RoleEnum.USER] }
+            },
+            {
+                path: 'workflows/:id/editor',
+                loadComponent: () => import('./app/pages/workflows/workflow-editor/workflow-editor.component').then(m => m.WorkflowEditorComponent),
+                canActivate: [hasRoleGuard],
+                data: { roles: [RoleEnum.ADMIN, RoleEnum.USER] }
             }
         ]
     },

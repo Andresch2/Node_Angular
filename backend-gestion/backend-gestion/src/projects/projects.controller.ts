@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Request as NestRequest,
   Param,
   Patch,
   Post,
@@ -42,8 +43,8 @@ export class ProjectsController {
   @ApiCreatedResponse({
     type: Project,
   })
-  create(@Body() createProjectDto: CreateProjectDto) {
-    return this.projectsService.create(createProjectDto);
+  create(@Body() createProjectDto: CreateProjectDto, @NestRequest() request) {
+    return this.projectsService.create(createProjectDto, request.user);
   }
 
   @Get()
@@ -51,6 +52,7 @@ export class ProjectsController {
     type: InfinityPaginationResponse(Project),
   })
   async findAll(
+    @NestRequest() request,
     @Query() query: FindAllProjectsDto,
   ): Promise<InfinityPaginationResponseDto<Project>> {
     const page = query?.page ?? 1;
@@ -64,6 +66,7 @@ export class ProjectsController {
         page,
         limit,
       },
+      user: request.user,
     });
 
     return infinityPagination(result.data, { page, limit }, result.total);

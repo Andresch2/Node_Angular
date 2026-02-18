@@ -2,31 +2,30 @@ import { WorkflowNode } from '../../../../domain/workflow-node';
 import { WorkflowNodeEntity } from '../entities/workflow-node.entity';
 
 export class WorkflowNodeMapper {
-  static toDomain(raw: WorkflowNodeEntity): WorkflowNode {
-    const domainEntity = new WorkflowNode();
-    domainEntity.id = raw.id;
-    domainEntity.name = raw.name;
-    domainEntity.type = raw.type;
-    domainEntity.config = raw.config;
-    domainEntity.position = raw.position;
-    domainEntity.workflowId = raw.workflowId;
-    domainEntity.createdAt = raw.createdAt;
-    domainEntity.updatedAt = raw.updatedAt;
-    return domainEntity;
+  static toDomain(entity: WorkflowNodeEntity): WorkflowNode {
+    const domain = new WorkflowNode();
+    domain.id = entity.id;
+    domain.type = entity.type;
+    domain.config = entity.config;
+    domain.x = entity.x;
+    domain.y = entity.y;
+    domain.workflowId = entity.workflowId;
+    domain.parentId = entity.parentId;
+    domain.createdAt = entity.createdAt;
+    domain.updatedAt = entity.updatedAt;
+    return domain;
   }
 
-  static toPersistence(domainEntity: WorkflowNode): WorkflowNodeEntity {
-    const persistenceEntity = new WorkflowNodeEntity();
-    persistenceEntity.name = domainEntity.name;
-    persistenceEntity.type = domainEntity.type;
-    persistenceEntity.config = domainEntity.config;
-    persistenceEntity.position = domainEntity.position;
-    persistenceEntity.workflowId = domainEntity.workflowId;
-    if (domainEntity.id) {
-      persistenceEntity.id = domainEntity.id;
-    }
-    persistenceEntity.createdAt = domainEntity.createdAt;
-    persistenceEntity.updatedAt = domainEntity.updatedAt;
-    return persistenceEntity;
+  static toPersistence(
+    domain: Partial<WorkflowNode>,
+  ): Partial<WorkflowNodeEntity> {
+    const entity: Partial<WorkflowNodeEntity> = {};
+    if (domain.type !== undefined) entity.type = domain.type;
+    if (domain.config !== undefined) entity.config = domain.config;
+    if (domain.x !== undefined) entity.x = domain.x;
+    if (domain.y !== undefined) entity.y = domain.y;
+    if (domain.workflowId !== undefined) entity.workflowId = domain.workflowId;
+    if (domain.parentId !== undefined) entity.parentId = domain.parentId;
+    return entity;
   }
 }

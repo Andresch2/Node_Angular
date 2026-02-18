@@ -1,71 +1,50 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { NullableType } from '../../../../../utils/types/nullable.type';
 import { WorkflowNode } from '../../../../domain/workflow-node';
 import { WorkflowNodeRepository } from '../../workflow-node.repository';
 import { WorkflowNodeEntity } from '../entities/workflow-node.entity';
 import { WorkflowNodeMapper } from '../mappers/workflow-node.mapper';
 
 @Injectable()
-export class WorkflowNodeRelationalRepository
-  implements WorkflowNodeRepository
-{
+export class RelationalWorkflowNodeRepository extends WorkflowNodeRepository {
   constructor(
     @InjectRepository(WorkflowNodeEntity)
-    private readonly workflowNodeRepository: Repository<WorkflowNodeEntity>,
-  ) {}
+    private readonly repo: Repository<WorkflowNodeEntity>,
+  ) {
+    super();
+  }
 
-  async create(data: WorkflowNode): Promise<WorkflowNode> {
-    const persistenceModel = WorkflowNodeMapper.toPersistence(data);
-    const newEntity = await this.workflowNodeRepository.save(
-      this.workflowNodeRepository.create(persistenceModel),
-    );
-    return WorkflowNodeMapper.toDomain(newEntity);
+  async create(
+    data: Omit<WorkflowNode, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<WorkflowNode> {
+    const entity = this.repo.create(WorkflowNodeMapper.toPersistence(data));
+    const saved = await this.repo.save(entity);
+    return WorkflowNodeMapper.toDomain(saved);
   }
 
   async findByWorkflowId(workflowId: string): Promise<WorkflowNode[]> {
-    const entities = await this.workflowNodeRepository.find({
+    const entities = await this.repo.find({
       where: { workflowId },
-      order: { position: 'ASC' },
+      order: { createdAt: 'ASC' },
     });
-
-    return entities.map((entity) => WorkflowNodeMapper.toDomain(entity));
+    return entities.map(WorkflowNodeMapper.toDomain);
   }
 
-  async findById(id: WorkflowNode['id']): Promise<NullableType<WorkflowNode>> {
-    const entity = await this.workflowNodeRepository.findOne({
-      where: { id },
-    });
-
+  async findById(id: string): Promise<WorkflowNode | null> {
+    const entity = await this.repo.findOne({ where: { id } });
     return entity ? WorkflowNodeMapper.toDomain(entity) : null;
   }
 
   async update(
-    id: WorkflowNode['id'],
-    payload: Partial<WorkflowNode>,
-  ): Promise<WorkflowNode> {
-    const entity = await this.workflowNodeRepository.findOne({
-      where: { id },
-    });
-
-    if (!entity) {
-      throw new Error('Record not found');
-    }
-
-    const updatedEntity = await this.workflowNodeRepository.save(
-      this.workflowNodeRepository.create(
-        WorkflowNodeMapper.toPersistence({
-          ...WorkflowNodeMapper.toDomain(entity),
-          ...payload,
-        }),
-      ),
-    );
-
-    return WorkflowNodeMapper.toDomain(updatedEntity);
+    id: string,
+    data: Partial<WorkflowNode>,
+  ): Promise<WorkflowNode | null> {
+    await this.repo.update(id, WorkflowNodeMapper.toPersistence(data));
+    return this.findById(id);
   }
 
-  async remove(id: WorkflowNode['id']): Promise<void> {
-    await this.workflowNodeRepository.delete(id);
+  async remove(id: string): Promise<void> {
+    await this.repo.delete(id);
   }
 }

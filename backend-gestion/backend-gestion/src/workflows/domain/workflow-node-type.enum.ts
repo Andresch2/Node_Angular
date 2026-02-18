@@ -1,0 +1,8 @@
+export enum WorkflowNodeType {
+  TRIGGER = 'TRIGGER',
+  HTTP = 'HTTP',
+  WEBHOOK = 'WEBHOOK',
+  ACTION = 'ACTION',
+  DELAY = 'DELAY',
+  NOTIFICATION = 'NOTIFICATION',
+}

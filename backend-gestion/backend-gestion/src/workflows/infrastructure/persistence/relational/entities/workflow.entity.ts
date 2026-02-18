@@ -2,47 +2,48 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ProjectEntity } from '../../../../../projects/infrastructure/persistence/relational/entities/project.entity';
 import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
 import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
 import { WorkflowNodeEntity } from './workflow-node.entity';
 
-@Entity({
-  name: 'workflow',
-})
+@Entity({ name: 'workflow' })
 export class WorkflowEntity extends EntityRelationalHelper {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({
-    nullable: false,
-    type: String,
-  })
-  name: string;
+  @Column({ type: 'varchar', nullable: false })
+  title: string;
 
-  @Column({
-    nullable: true,
-    type: String,
-  })
+  @Column({ type: 'varchar', nullable: true })
   description?: string | null;
 
-  @Column({
-    nullable: false,
-    type: String,
-  })
-  inngestEventName: string;
+  @Column({ type: 'varchar', nullable: false })
+  triggerType: 'webhook' | 'http';
 
-  @Column({
-    type: 'boolean',
-    default: true,
-  })
-  isActive: boolean;
+  @Column({ nullable: true, type: 'uuid' })
+  projectId?: string | null;
 
-  // Relación con WorkflowNodes (One-to-Many)
+  @ManyToOne(
+    () => ProjectEntity,
+    (project: ProjectEntity) => project.workflows,
+    {
+      nullable: true,
+      onDelete: 'SET NULL',
+    },
+  )
+  @JoinColumn({ name: 'projectId' })
+  project?: ProjectEntity | null;
+
+  @ManyToOne(() => UserEntity, { eager: true })
+  user?: UserEntity | null;
+
   @OneToMany(
     () => WorkflowNodeEntity,
     (node: WorkflowNodeEntity) => node.workflow,
@@ -51,11 +52,6 @@ export class WorkflowEntity extends EntityRelationalHelper {
     },
   )
   nodes?: WorkflowNodeEntity[];
-
-  @ManyToOne(() => UserEntity, {
-    eager: true,
-  })
-  user?: UserEntity | null;
 
   @CreateDateColumn()
   createdAt: Date;

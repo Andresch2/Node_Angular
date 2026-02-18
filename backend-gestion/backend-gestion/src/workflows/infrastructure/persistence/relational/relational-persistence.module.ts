@@ -4,19 +4,19 @@ import { WorkflowNodeRepository } from '../workflow-node.repository';
 import { WorkflowRepository } from '../workflow.repository';
 import { WorkflowNodeEntity } from './entities/workflow-node.entity';
 import { WorkflowEntity } from './entities/workflow.entity';
-import { WorkflowNodeRelationalRepository } from './repositories/workflow-node.repository';
-import { WorkflowRelationalRepository } from './repositories/workflow.repository';
+import { RelationalWorkflowNodeRepository } from './repositories/workflow-node.repository';
+import { RelationalWorkflowRepository } from './repositories/workflow.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([WorkflowEntity, WorkflowNodeEntity])],
   providers: [
     {
       provide: WorkflowRepository,
-      useClass: WorkflowRelationalRepository,
+      useClass: RelationalWorkflowRepository,
     },
     {
       provide: WorkflowNodeRepository,
-      useClass: WorkflowNodeRelationalRepository,
+      useClass: RelationalWorkflowNodeRepository,
     },
   ],
   exports: [WorkflowRepository, WorkflowNodeRepository],

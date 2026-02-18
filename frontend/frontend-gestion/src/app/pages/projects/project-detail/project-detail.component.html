@@ -43,6 +43,9 @@
           <p-button icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger" (onClick)="deleteTask(task.id)"
             pTooltip="Eliminar">
           </p-button>
+          <p-button icon="pi pi-play" [text]="true" [rounded]="true" severity="help"
+            (onClick)="showWorkflowDialog(task.id)" pTooltip="Ejecutar Workflow">
+          </p-button>
         </td>
       </tr>
     </ng-template>

@@ -1,0 +1,133 @@
+<p-toast />
+
+<div class="editor-container">
+    <!-- Toolbar -->
+    <div class="editor-toolbar">
+        <div class="toolbar-left">
+            <p-button icon="pi pi-arrow-left" [text]="true" (onClick)="goBack()" pTooltip="Volver" />
+            <h3 class="workflow-title">{{ workflow()?.title || 'Cargando...' }}</h3>
+            @if (workflow()?.triggerType) {
+            <p-tag [value]="workflow()!.triggerType"
+                [severity]="workflow()!.triggerType === 'webhook' ? 'info' : 'success'" />
+            }
+        </div>
+        <div class="toolbar-right">
+            @if (connecting()) {
+            <p-button label="Cancelar Conexión" icon="pi pi-times" severity="danger" (onClick)="cancelConnection()" />
+            }
+            @if (!simulating()) {
+            <p-button label="Simular" icon="pi pi-play" severity="secondary" (onClick)="startSimulation()" />
+            } @else {
+            <p-button label="Detener" icon="pi pi-stop" severity="danger" (onClick)="stopSimulation()" />
+            }
+            <p-button label="Guardar" icon="pi pi-save" (onClick)="saveAll()" [loading]="saving()" />
+        </div>
+    </div>
+
+    <div class="editor-body">
+        <!-- Toolbox -->
+        <div class="toolbox">
+            <h4>Nodos</h4>
+            @for (item of toolboxItems; track item.type) {
+            <div class="toolbox-item" [draggable]="true" (dragstart)="onToolboxDragStart($event, item)"
+                [style.border-left-color]="item.color">
+                <i class="pi {{ item.icon }}" [style.color]="item.color"></i>
+                <div class="toolbox-item-info">
+                    <span class="toolbox-item-label">{{ item.label }}</span>
+                    <span class="toolbox-item-desc">{{ item.description }}</span>
+                </div>
+            </div>
+            }
+            <div class="toolbox-hint">
+                <i class="pi pi-info-circle"></i>
+                <span>Arrastra un nodo al canvas. Haz clic en el conector inferior para conectar.</span>
+            </div>
+        </div>
+
+        <!-- Canvas SVG -->
+        <div class="editor-canvas" [class.connecting-mode]="connecting()" (dragover)="onCanvasDragOver($event)"
+            (drop)="onCanvasDrop($event)" (click)="deselectAll()">
+            <!-- Connections (SVG Lines) -->
+            <svg class="connections-layer">
+                @for (conn of getConnections(); track conn.to.id) {
+                <line [attr.x1]="conn.from.x + 90" [attr.y1]="conn.from.y + 50" [attr.x2]="conn.to.x + 90"
+                    [attr.y2]="conn.to.y" class="connection-line"
+                    [class.active-line]="conn.from.active || conn.to.active" />
+                <!-- Flecha -->
+                <polygon [attr.points]="getArrowPoints(conn.from, conn.to)" class="connection-arrow"
+                    [class.active-line]="conn.from.active || conn.to.active" />
+                }
+            </svg>
+
+            <!-- Nodes -->
+            @for (node of nodes(); track node.id) {
+            <div class="workflow-node" [class.selected]="node.selected" [class.active]="node.active"
+                [class.connecting-source]="connecting() && connectingFromId() === node.id"
+                [class.connecting-target]="connecting() && connectingFromId() !== node.id"
+                [ngClass]="'node-' + node.type.toLowerCase()" [style.left.px]="node.x" [style.top.px]="node.y"
+                (mousedown)="onNodeMouseDown($event, node)" (click)="selectNode(node); $event.stopPropagation()">
+                <div class="node-card">
+                    <div class="node-header">
+                        <i class="pi {{ getNodeIcon(node.type) }}"></i>
+                        <span>{{ getNodeLabel(node.type) }}</span>
+                    </div>
+                    <div class="node-body">
+                        <div class="node-name">{{ node.config?.['action'] || node.config?.['url'] ||
+                            getNodeLabel(node.type) }}</div>
+                        <small class="node-id">{{ node.id.startsWith('temp-') ? '● Nuevo' : node.id.substring(0, 8) +
+                            '...'
+                            }}</small>
+                    </div>
+                </div>
+                <!-- Connector dot -->
+                <div class="connector connector-out" (click)="startConnection(node); $event.stopPropagation()"
+                    title="Conectar desde aquí"></div>
+            </div>
+            }
+        </div>
+
+        <!-- Config Panel -->
+        @if (selectedNode()) {
+        <div class="config-panel">
+            <h4><i class="pi pi-sliders-h"></i> Propiedades</h4>
+            <div class="config-section">
+                <label>Tipo</label>
+                <p-tag [value]="getNodeLabel(selectedNode()!.type)"
+                    [style]="{ background: getNodeColor(selectedNode()!.type) }" />
+            </div>
+            <div class="config-section">
+                <label>ID</label>
+                <small>{{ selectedNode()!.id }}</small>
+            </div>
+            <div class="config-section">
+                <label>Posición</label>
+                <small>X: {{ selectedNode()!.x | number:'1.0-0' }}, Y: {{ selectedNode()!.y | number:'1.0-0' }}</small>
+            </div>
+            @if (selectedNode()!.parentId) {
+            <div class="config-section">
+                <label>Padre</label>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <small>{{ selectedNode()!.parentId!.substring(0, 8) }}...</small>
+                    <p-button icon="pi pi-times" size="small" [text]="true" severity="danger"
+                        (onClick)="removeConnection(selectedNode()!)" pTooltip="Desconectar" />
+                </div>
+            </div>
+            }
+            <div class="config-section">
+                <label>Config (JSON)</label>
+                <textarea class="config-textarea" [class.invalid]="!configValid()" [value]="configJson()"
+                    (input)="onConfigChange($any($event.target).value)" rows="10"></textarea>
+                @if (!configValid()) {
+                <small class="error-text"><i class="pi pi-exclamation-triangle"></i> JSON inválido</small>
+                }
+            </div>
+            <div class="config-actions">
+                <p-button label="Conectar" icon="pi pi-link" severity="info"
+                    (onClick)="startConnection(selectedNode()!)" size="small" />
+                <p-button label="Eliminar" icon="pi pi-trash" severity="danger" (onClick)="deleteNode(selectedNode()!)"
+                    size="small" />
+            </div>
+        </div>
+        }
+    </div>
+</div>

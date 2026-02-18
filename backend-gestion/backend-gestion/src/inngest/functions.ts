@@ -1,96 +1,91 @@
+import { WorkflowEngineService } from '../workflows/engine/workflow-engine.service';
 import { WorkflowsService } from '../workflows/workflows.service';
 import { inngest } from './client';
 
-interface InngestDependencies {
+interface InngestDeps {
   workflowsService: WorkflowsService;
+  workflowEngineService: WorkflowEngineService;
 }
 
 /**
- * Factory que recibe dependencias de NestJS y retorna las funciones Inngest.
- * Se llama desde main.ts después de que la app NestJS esté inicializada.
+ * Factory que recibe dependencias NestJS y retorna las funciones de Inngest.
+ *
+ * Funciones:
+ *   1. workflow/execute — Ejecuta un workflow por ID
+ *   2. webhook.received — Disparado cuando se recibe un webhook
+ *   3. http.triggered   — Disparado para workflows de tipo HTTP
  */
-export function getInngestFunctions({ workflowsService }: InngestDependencies) {
-  // Función genérica que ejecuta un workflow por su ID
+export function getInngestFunctions(deps: InngestDeps) {
+  const { workflowsService, workflowEngineService } = deps;
+
+  // 1. Ejecución genérica de workflow
   const executeWorkflow = inngest.createFunction(
-    { id: 'workflow-executor', name: 'Ejecutar Workflow' },
+    { id: 'execute-workflow' },
     { event: 'workflow/execute' },
     async ({ event, step }) => {
-      const workflowId = event.data?.workflowId as string;
+      const { workflowId, ...payload } = event.data;
 
-      if (!workflowId) {
-        throw new Error('Missing workflowId in event data');
+      const workflow = await step.run('load-workflow', async () => {
+        return workflowsService.findById(workflowId);
+      });
+
+      if (!workflow) {
+        return {
+          status: 'error',
+          message: `Workflow ${workflowId} no encontrado`,
+        };
       }
 
-      // Step 1: Cargar el workflow desde la BD
-      const workflow = await step.run('load-workflow', async () => {
-        const wf = await workflowsService.findById(workflowId);
-        if (!wf) {
-          throw new Error(`Workflow ${workflowId} no encontrado`);
-        }
-        return wf;
+      return workflowEngineService.executeWorkflow(workflowId, step, payload);
+    },
+  );
+
+  // 2. Webhook recibido → ejecuta workflow
+  const onWebhookReceived = inngest.createFunction(
+    { id: 'on-webhook-received' },
+    { event: 'webhook.received' },
+    async ({ event, step }) => {
+      const { workflowId, payload } = event.data;
+
+      return workflowEngineService.executeWorkflow(workflowId, step, {
+        webhookPayload: payload,
+      });
+    },
+  );
+
+  // 3. HTTP trigger → busca workflows de tipo HTTP y los ejecuta
+  const onHttpTriggered = inngest.createFunction(
+    { id: 'on-http-triggered' },
+    { event: 'http.triggered' },
+    async ({ event, step }) => {
+      const { workflowId, ...payload } = event.data;
+
+      if (workflowId) {
+        return workflowEngineService.executeWorkflow(workflowId, step, payload);
+      }
+
+      // Buscar workflows con triggerType 'http'
+      const workflows = await step.run('find-http-workflows', async () => {
+        return workflowsService.findByTriggerType('http');
       });
 
-      // Step 2: Cargar los nodos del workflow
-      const nodes = await step.run('load-nodes', async () => {
-        return workflowsService.findNodesByWorkflowId(workflowId);
-      });
-
-      // Step 3: Ejecutar cada nodo secuencialmente
-      const results: Record<string, any>[] = [];
-      for (const node of nodes) {
-        const result = await step.run(
-          `execute-node-${node.position}-${node.name}`,
-          () => {
-            // Aquí se puede agregar lógica según el tipo de nodo
-            switch (node.type) {
-              case 'ACTION':
-                return {
-                  nodeId: node.id,
-                  name: node.name,
-                  status: 'completed',
-                  config: node.config,
-                };
-              case 'CONDITION':
-                return {
-                  nodeId: node.id,
-                  name: node.name,
-                  status: 'evaluated',
-                  config: node.config,
-                };
-              case 'DELAY':
-                return {
-                  nodeId: node.id,
-                  name: node.name,
-                  status: 'waited',
-                  config: node.config,
-                };
-              case 'NOTIFICATION':
-                return {
-                  nodeId: node.id,
-                  name: node.name,
-                  status: 'notified',
-                  config: node.config,
-                };
-              default:
-                return {
-                  nodeId: node.id,
-                  name: node.name,
-                  status: 'unknown',
-                };
-            }
-          },
+      const results: any[] = [];
+      for (const wf of workflows) {
+        const result = await workflowEngineService.executeWorkflow(
+          wf.id,
+          step,
+          payload,
         );
-        results.push(result);
+        results.push({ workflowId: wf.id, result });
       }
 
       return {
-        workflowId: workflow.id,
-        workflowName: workflow.name,
-        nodesExecuted: results.length,
+        status: 'completed',
+        workflowsExecuted: results.length,
         results,
       };
     },
   );
 
-  return [executeWorkflow];
+  return [executeWorkflow, onWebhookReceived, onHttpTriggered];
 }

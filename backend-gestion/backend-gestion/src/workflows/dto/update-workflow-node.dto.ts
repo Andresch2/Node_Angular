@@ -1,4 +1,38 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateWorkflowNodeDto } from './create-workflow-node.dto';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsEnum,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsUUID,
+  ValidateIf
+} from 'class-validator';
+import { WorkflowNodeType } from '../domain/workflow-node-type.enum';
 
-export class UpdateWorkflowNodeDto extends PartialType(CreateWorkflowNodeDto) {}
+export class UpdateWorkflowNodeDto {
+  @ApiPropertyOptional({ enum: WorkflowNodeType })
+  @IsEnum(WorkflowNodeType)
+  @IsOptional()
+  type?: WorkflowNodeType;
+
+  @ApiPropertyOptional({ type: Object })
+  @IsObject()
+  @IsOptional()
+  config?: Record<string, any> | null;
+
+  @ApiPropertyOptional({ type: Number })
+  @IsNumber()
+  @IsOptional()
+  x?: number;
+
+  @ApiPropertyOptional({ type: Number })
+  @IsNumber()
+  @IsOptional()
+  y?: number;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @ValidateIf((o) => o.parentId !== null)
+  @IsUUID()
+  @IsOptional()
+  parentId?: string | null;
+}

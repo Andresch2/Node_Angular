@@ -1,0 +1,542 @@
+// ==================== Variables ====================
+$node-width: 180px;
+$node-radius: 16px;
+$toolbox-width: 220px;
+$config-width: 320px;
+$accent: #6366f1;
+$accent-light: rgba(99, 102, 241, 0.15);
+
+// ==================== Container ====================
+
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 80px);
+    background: var(--surface-ground);
+}
+
+// ==================== Toolbar ====================
+
+.editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.5rem;
+    background: var(--surface-card);
+    border-bottom: 1px solid var(--surface-border);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    z-index: 10;
+
+    .toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .workflow-title {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.15rem;
+        background: linear-gradient(135deg, $accent, #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+}
+
+// ==================== Body ====================
+
+.editor-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+// ==================== Toolbox ====================
+
+.toolbox {
+    width: $toolbox-width;
+    min-width: $toolbox-width;
+    background: var(--surface-card);
+    border-right: 1px solid var(--surface-border);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+
+    h4 {
+        margin: 0 0 0.75rem 0;
+        font-weight: 700;
+        color: var(--text-color-secondary);
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.1em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        &::before {
+            content: '';
+            display: inline-block;
+            width: 18px;
+            height: 3px;
+            background: linear-gradient(90deg, $accent, #a855f7);
+            border-radius: 4px;
+        }
+    }
+
+    .toolbox-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        border-left: 4px solid;
+        background: var(--surface-ground);
+        cursor: grab;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+        i {
+            font-size: 1.1rem;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .toolbox-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .toolbox-item-label {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .toolbox-item-desc {
+            font-size: 0.7rem;
+            font-weight: 400;
+            color: var(--text-color-secondary);
+            opacity: 0.7;
+        }
+
+        &:hover {
+            background: var(--surface-hover);
+            transform: translateX(4px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        &:active {
+            cursor: grabbing;
+            transform: scale(0.97);
+        }
+    }
+
+    .toolbox-hint {
+        margin-top: auto;
+        padding: 0.75rem;
+        background: $accent-light;
+        border-radius: 10px;
+        font-size: 0.72rem;
+        color: var(--text-color-secondary);
+        line-height: 1.4;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+
+        i {
+            color: $accent;
+            font-size: 0.9rem;
+            margin-top: 1px;
+        }
+    }
+}
+
+// ==================== Canvas ====================
+
+.editor-canvas {
+    flex: 1;
+    position: relative;
+    overflow: auto;
+    background:
+        radial-gradient(circle, rgba(99, 102, 241, 0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+    min-height: 600px;
+
+    // When in connecting mode, show crosshair cursor on the canvas
+    &.connecting-mode {
+        cursor: crosshair;
+    }
+
+    .connections-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+
+        .connection-line {
+            stroke: var(--text-color-secondary);
+            stroke-width: 2.5;
+            stroke-dasharray: 8, 4;
+            stroke-linecap: round;
+            opacity: 0.45;
+            transition: all 0.15s ease;
+
+            &.active-line {
+                stroke: $accent;
+                stroke-width: 3.5;
+                stroke-dasharray: none;
+                opacity: 1;
+                filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.5));
+                animation: pulse-line 1s infinite alternate;
+            }
+        }
+
+        .connection-arrow {
+            fill: var(--text-color-secondary);
+            opacity: 0.45;
+            transition: all 0.15s ease;
+
+            &.active-line {
+                fill: $accent;
+                opacity: 1;
+                filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.4));
+            }
+        }
+    }
+}
+
+// ==================== Nodes (FULL COLOR) ====================
+
+.workflow-node {
+    position: absolute;
+    width: $node-width;
+    border-radius: $node-radius;
+    cursor: move;
+    z-index: 5;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+    user-select: none;
+    overflow: visible;
+    border: none;
+
+    // Full-color background gradient via a wrapper
+    .node-card {
+        border-radius: $node-radius;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
+        transition: box-shadow 0.15s ease, transform 0.15s ease;
+    }
+
+    &:hover .node-card {
+        box-shadow: 0 8px 36px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+
+    &.selected .node-card {
+        box-shadow:
+            0 0 0 3px rgba(255, 255, 255, 0.6),
+            0 0 0 6px $accent,
+            0 8px 32px rgba(99, 102, 241, 0.2);
+    }
+
+    &.active .node-card {
+        box-shadow:
+            0 0 0 4px rgba(255, 255, 255, 0.5),
+            0 0 0 7px $accent,
+            0 0 30px rgba(99, 102, 241, 0.35);
+        animation: pulse-node 0.8s infinite alternate;
+    }
+
+    // Source node glow when connecting
+    &.connecting-source .node-card {
+        box-shadow:
+            0 0 0 3px rgba(255, 255, 255, 0.5),
+            0 0 0 6px #22c55e,
+            0 0 20px rgba(34, 197, 94, 0.4);
+        animation: pulse-source 1s infinite alternate;
+    }
+
+    // Target-ready animation when connecting
+    &.connecting-target {
+        .node-card {
+            outline: 2px dashed rgba(255, 255, 255, 0.6);
+            outline-offset: 4px;
+        }
+
+        cursor: pointer;
+
+        &:hover .node-card {
+            box-shadow:
+                0 0 0 3px rgba(255, 255, 255, 0.5),
+                0 0 0 6px #22c55e,
+                0 0 24px rgba(34, 197, 94, 0.3);
+        }
+    }
+
+    .node-header {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.7rem 0.9rem;
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+
+        i {
+            font-size: 1rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
+        }
+    }
+
+    .node-body {
+        padding: 0.55rem 0.9rem 0.65rem;
+        background: rgba(0, 0, 0, 0.08);
+
+        .node-name {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: white;
+            opacity: 0.95;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .node-id {
+            font-size: 0.67rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'Courier New', monospace;
+        }
+    }
+
+    // Connector dot (bottom)
+    .connector {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid rgba(0, 0, 0, 0.25);
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.15s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+        &:hover {
+            background: #22c55e;
+            border-color: #22c55e;
+            transform: translateX(-50%) scale(1.4);
+            box-shadow: 0 0 14px rgba(34, 197, 94, 0.6);
+        }
+    }
+
+    .connector-out {
+        bottom: -9px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    // Connector glow when canvas is in connecting mode
+    &.connecting-target .connector {
+        background: #22c55e;
+        border-color: #16a34a;
+        animation: pulse-connector 0.8s infinite alternate;
+    }
+}
+
+// ==================== Node Color Themes ====================
+// Each node type gets a vibrant gradient
+
+.node-trigger .node-card {
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+}
+
+.node-http .node-card {
+    background: linear-gradient(135deg, #059669, #34d399);
+}
+
+.node-webhook .node-card {
+    background: linear-gradient(135deg, #d97706, #fbbf24);
+}
+
+.node-action .node-card {
+    background: linear-gradient(135deg, #2563eb, #60a5fa);
+}
+
+.node-notification .node-card {
+    background: linear-gradient(135deg, #0d9488, #14b8a6);
+}
+
+.node-delay .node-card {
+    background: linear-gradient(135deg, #dc2626, #f87171);
+}
+
+// ==================== Config Panel ====================
+
+.config-panel {
+    width: $config-width;
+    min-width: $config-width;
+    background: var(--surface-card);
+    border-left: 1px solid var(--surface-border);
+    padding: 1.25rem;
+    overflow-y: auto;
+
+    h4 {
+        margin: 0 0 1.25rem 0;
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        i {
+            color: $accent;
+        }
+    }
+
+    .config-section {
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--surface-border);
+
+        &:last-of-type {
+            border-bottom: none;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.35rem;
+            font-size: 0.7rem;
+            color: var(--text-color-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        small {
+            color: var(--text-color);
+            word-break: break-all;
+            font-size: 0.85rem;
+        }
+    }
+
+    .config-textarea {
+        width: 100%;
+        font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+        font-size: 0.8rem;
+        padding: 0.75rem;
+        border: 2px solid var(--surface-border);
+        border-radius: 10px;
+        background: var(--surface-ground);
+        color: var(--text-color);
+        resize: vertical;
+        transition: all 0.15s ease;
+        line-height: 1.5;
+
+        &:focus {
+            outline: none;
+            border-color: $accent;
+            box-shadow: 0 0 0 3px $accent-light;
+        }
+
+        &.invalid {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+        }
+    }
+
+    .error-text {
+        color: #ef4444;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-top: 0.35rem;
+        font-weight: 500;
+    }
+
+    .config-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--surface-border);
+    }
+}
+
+// ==================== Animations ====================
+
+@keyframes pulse-node {
+    0% {
+        box-shadow:
+            0 0 0 4px rgba(255, 255, 255, 0.5),
+            0 0 0 7px rgba(99, 102, 241, 0.6);
+    }
+
+    100% {
+        box-shadow:
+            0 0 0 5px rgba(255, 255, 255, 0.3),
+            0 0 0 10px rgba(99, 102, 241, 0.2),
+            0 0 40px rgba(99, 102, 241, 0.2);
+    }
+}
+
+@keyframes pulse-source {
+    0% {
+        box-shadow:
+            0 0 0 3px rgba(255, 255, 255, 0.5),
+            0 0 0 6px rgba(34, 197, 94, 0.6);
+    }
+
+    100% {
+        box-shadow:
+            0 0 0 4px rgba(255, 255, 255, 0.3),
+            0 0 0 9px rgba(34, 197, 94, 0.2),
+            0 0 30px rgba(34, 197, 94, 0.2);
+    }
+}
+
+@keyframes pulse-connector {
+    0% {
+        box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+    }
+
+    100% {
+        box-shadow: 0 0 14px rgba(34, 197, 94, 0.7);
+    }
+}
+
+@keyframes pulse-line {
+    0% {
+        opacity: 0.6;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}

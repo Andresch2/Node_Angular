@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { User } from '../../users/domain/user';
 
 export class Project {
   @ApiProperty({
@@ -35,4 +36,9 @@ export class Project {
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiProperty({
+    type: () => User,
+  })
+  user?: User | null;
 }

@@ -4,62 +4,57 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
-import { WorkflowNodeType } from '../../../../domain/workflow-node';
+import { WorkflowNodeType } from '../../../../domain/workflow-node-type.enum';
 import { WorkflowEntity } from './workflow.entity';
 
-@Entity({
-  name: 'workflow_node',
-})
+@Entity({ name: 'workflow_node' })
 export class WorkflowNodeEntity extends EntityRelationalHelper {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({
-    nullable: false,
-    type: String,
-  })
-  name: string;
-
-  @Column({
     type: 'enum',
     enum: WorkflowNodeType,
     default: WorkflowNodeType.ACTION,
-    nullable: false,
   })
   type: WorkflowNodeType;
 
-  @Column({
-    type: 'jsonb',
-    nullable: true,
-  })
+  @Column({ type: 'jsonb', nullable: true })
   config?: Record<string, any> | null;
 
-  @Column({
-    type: 'int',
-    default: 0,
-  })
-  position: number;
+  @Column({ type: 'float', default: 0 })
+  x: number;
 
-  @Column({
-    nullable: false,
-    type: String,
-  })
+  @Column({ type: 'float', default: 0 })
+  y: number;
+
+  @Column({ type: 'uuid' })
   workflowId: string;
 
-  // Relación con Workflow (Many-to-One)
-  @ManyToOne(
-    () => WorkflowEntity,
-    (workflow: WorkflowEntity) => workflow.nodes,
-    {
-      onDelete: 'CASCADE',
-    },
-  )
+  @Column({ type: 'uuid', nullable: true })
+  parentId?: string | null;
+
+  // FK → Workflow
+  @ManyToOne(() => WorkflowEntity, (wf) => wf.nodes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'workflowId' })
   workflow: WorkflowEntity;
+
+  // Self-reference: padre
+  @ManyToOne(() => WorkflowNodeEntity, (node) => node.childNodes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'parentId' })
+  parentNode?: WorkflowNodeEntity | null;
+
+  // Self-reference: hijos
+  @OneToMany(() => WorkflowNodeEntity, (node) => node.parentNode)
+  childNodes?: WorkflowNodeEntity[];
 
   @CreateDateColumn()
   createdAt: Date;
