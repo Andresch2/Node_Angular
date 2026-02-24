@@ -9,7 +9,7 @@ import { CreateProjectDto, PaginatedResponse, Project } from '../models/project.
 export class ProjectService {
   private readonly API_URL = 'http://localhost:3000/api/v1';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getProjects(page: number = 1, limit: number = 10): Observable<PaginatedResponse<Project>> {
     return this.http.get<PaginatedResponse<Project>>(

@@ -8,8 +8,6 @@ interface InngestDeps {
 }
 
 /**
- * Factory que recibe dependencias NestJS y retorna las funciones de Inngest.
- *
  * Funciones:
  *   1. workflow/execute — Ejecuta un workflow por ID
  *   2. webhook.received — Disparado cuando se recibe un webhook
@@ -87,5 +85,22 @@ export function getInngestFunctions(deps: InngestDeps) {
     },
   );
 
-  return [executeWorkflow, onWebhookReceived, onHttpTriggered];
+  // 4. Task creado automáticamente (Demostración de auto-trigger)
+  const onTaskCreated = inngest.createFunction(
+    { id: 'on-task-created' },
+    { event: 'task.created' },
+    async ({ event, step }) => {
+      const { taskId, title } = event.data;
+
+      await step.run('log-task-info', async () => {
+        console.log(`¡Inngest detectó una nueva tarea automáticamente!: ${title} (ID: ${taskId})`);
+        return { message: 'Auto-trigger detectado correctamente' };
+      });
+
+      return { processed: true, taskId };
+    },
+  );
+
+  return [executeWorkflow, onWebhookReceived, onHttpTriggered, onTaskCreated];
 }
+

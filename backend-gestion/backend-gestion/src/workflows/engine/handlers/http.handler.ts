@@ -1,23 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NodeHandler, WorkflowContext } from '../types';
+import { TemplateUtil } from '../utils/template.util';
 
 /**
  * HttpHandler: Realiza peticiones HTTP externas (GET/POST).
- * Configuración esperada en node.config:
- *   { url: string, method?: 'GET' | 'POST', headers?: object, body?: any }
  */
 @Injectable()
 export class HttpHandler implements NodeHandler {
   private readonly logger = new Logger(HttpHandler.name);
 
+  constructor(private readonly templateUtil: TemplateUtil) { }
+
   async execute(
     node: any,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _context: WorkflowContext,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    context: WorkflowContext,
     _step: any,
   ): Promise<any> {
-    const config = node.config || {};
+    // Procesar la configuración con el motor de plantillas
+    const config = this.templateUtil.process(node.config || {}, context);
+
     const url = config.url;
     const method = (config.method || 'POST').toUpperCase();
     const headers = config.headers || { 'Content-Type': 'application/json' };
@@ -34,7 +35,7 @@ export class HttpHandler implements NodeHandler {
       const response = await fetch(url, {
         method,
         headers,
-        body: method !== 'GET' ? JSON.stringify(body) : undefined,
+        body: method !== 'GET' ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
       });
 
       const data = await response.text();

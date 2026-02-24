@@ -1,11 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, HostListener, OnInit, signal } from '@angular/core';
+import { Component, computed, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import {
@@ -15,15 +13,10 @@ import {
     WorkflowNodeType
 } from '../../../core/models/workflow.model';
 import { WorkflowService } from '../../../core/services/workflow.service';
-
-// Definición de tipos de nodo para el toolbox
-interface ToolboxItem {
-    type: WorkflowNodeType;
-    label: string;
-    description: string;
-    icon: string;
-    color: string;
-}
+import { WorkflowCanvasComponent } from './components/workflow-canvas/workflow-canvas.component';
+import { WorkflowPropertiesComponent } from './components/workflow-properties/workflow-properties.component';
+import { WorkflowToolbarComponent } from './components/workflow-toolbar/workflow-toolbar.component';
+import { ToolboxItem, WorkflowToolboxComponent } from './components/workflow-toolbox/workflow-toolbox.component';
 
 @Component({
     selector: 'app-workflow-editor',
@@ -33,9 +26,11 @@ interface ToolboxItem {
         FormsModule,
         ButtonModule,
         ToastModule,
-        InputTextModule,
-        SelectModule,
         TagModule,
+        WorkflowPropertiesComponent,
+        WorkflowToolboxComponent,
+        WorkflowCanvasComponent,
+        WorkflowToolbarComponent,
     ],
     providers: [MessageService],
     templateUrl: './workflow-editor.component.html',
@@ -50,11 +45,8 @@ export class WorkflowEditorComponent implements OnInit {
     connectingFromId = signal<string | null>(null);
     saving = signal(false);
     simulating = signal(false);
+    executing = signal(false);
     simulationIndex = signal(0);
-
-    // Configuración JSON del nodo seleccionado (como string para editar)
-    configJson = signal('{}');
-    configValid = signal(true);
 
     // IDs de nodos eliminados (para borrar del backend al guardar)
     deletedNodeIds: string[] = [];
@@ -64,16 +56,6 @@ export class WorkflowEditorComponent implements OnInit {
     dragNodeId: string | null = null;
     dragOffsetX = 0;
     dragOffsetY = 0;
-
-    // Toolbox de nodos
-    toolboxItems: ToolboxItem[] = [
-        { type: WorkflowNodeType.TRIGGER, label: 'Trigger', description: 'Punto de entrada', icon: 'pi-bolt', color: '#6366f1' },
-        { type: WorkflowNodeType.HTTP, label: 'HTTP', description: 'Llamada API', icon: 'pi-globe', color: '#22c55e' },
-        { type: WorkflowNodeType.WEBHOOK, label: 'Webhook', description: 'Enviar datos', icon: 'pi-link', color: '#f59e0b' },
-        { type: WorkflowNodeType.ACTION, label: 'Action', description: 'Ejecutar lógica', icon: 'pi-cog', color: '#3b82f6' },
-        { type: WorkflowNodeType.NOTIFICATION, label: 'Notificación', description: 'Enviar mensaje', icon: 'pi-bell', color: '#10b981' },
-        { type: WorkflowNodeType.DELAY, label: 'Delay', description: 'Esperar tiempo', icon: 'pi-clock', color: '#ef4444' },
-    ];
 
     // Nodos ordenados para simulación (DFS desde raíz)
     simulationOrder = computed<EditorNode[]>(() => {
@@ -140,8 +122,8 @@ export class WorkflowEditorComponent implements OnInit {
 
     // ==================== Toolbox Drag & Drop ====================
 
-    onToolboxDragStart(event: DragEvent, item: ToolboxItem) {
-        event.dataTransfer?.setData('node-type', item.type);
+    onToolboxDragStart(event: { event: DragEvent, item: ToolboxItem }) {
+        this.messageService.add({ severity: 'info', summary: 'Arrastrando', detail: `Agregando nodo ${event.item.label}` });
     }
 
     onCanvasDragOver(event: DragEvent) {
@@ -185,37 +167,12 @@ export class WorkflowEditorComponent implements OnInit {
         this.nodes.update(nodes => [...nodes, newNode]);
     }
 
-    // ==================== Node Dragging on Canvas ====================
+    // ==================== Node Handling on Canvas ====================
 
-    onNodeMouseDown(event: MouseEvent, node: EditorNode) {
-        if (this.connecting()) return;
-        event.stopPropagation();
-        this.dragging = true;
-        this.dragNodeId = node.id;
-        this.dragOffsetX = event.offsetX;
-        this.dragOffsetY = event.offsetY;
-    }
-
-    @HostListener('document:mousemove', ['$event'])
-    onMouseMove(event: MouseEvent) {
-        if (!this.dragging || !this.dragNodeId) return;
-
-        const canvas = document.querySelector('.editor-canvas') as HTMLElement;
-        if (!canvas) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left - this.dragOffsetX + 60;
-        const y = event.clientY - rect.top - this.dragOffsetY + 20;
-
+    updateNodePosition(event: { id: string, x: number, y: number }) {
         this.nodes.update(nodes =>
-            nodes.map(n => n.id === this.dragNodeId ? { ...n, x: Math.max(0, x), y: Math.max(0, y) } : n),
+            nodes.map(n => n.id === event.id ? { ...n, x: event.x, y: event.y } : n),
         );
-    }
-
-    @HostListener('document:mouseup')
-    onMouseUp() {
-        this.dragging = false;
-        this.dragNodeId = null;
     }
 
     // ==================== Selection ====================
@@ -229,8 +186,6 @@ export class WorkflowEditorComponent implements OnInit {
             nodes.map(n => ({ ...n, selected: n.id === node.id })),
         );
         this.selectedNode.set(node);
-        this.configJson.set(JSON.stringify(node.config || {}, null, 2));
-        this.configValid.set(true);
     }
 
     deselectAll() {
@@ -274,29 +229,28 @@ export class WorkflowEditorComponent implements OnInit {
         this.nodes.update(nodes =>
             nodes.map(n => n.id === node.id ? { ...n, parentId: null } : n),
         );
+        // update selectedNode if it's the disconnected one
+        if (this.selectedNode()?.id === node.id) {
+            this.selectedNode.set({ ...node, parentId: null });
+        }
     }
 
     // ==================== Config Editing ====================
 
-    onConfigChange(value: string) {
-        this.configJson.set(value);
-        try {
-            const parsed = JSON.parse(value);
-            this.configValid.set(true);
-            if (this.selectedNode()) {
-                this.nodes.update(nodes =>
-                    nodes.map(n => n.id === this.selectedNode()!.id ? { ...n, config: parsed } : n),
-                );
-            }
-        } catch {
-            this.configValid.set(false);
-        }
+    updateNodeConfig(config: Record<string, any>) {
+        const node = this.selectedNode();
+        if (!node) return;
+
+        this.nodes.update(nodes =>
+            nodes.map(n => n.id === node.id ? { ...n, config } : n),
+        );
+
+        this.selectedNode.set({ ...node, config });
     }
 
     // ==================== Delete Node ====================
 
     deleteNode(node: EditorNode) {
-        // Desconectar hijos
         this.nodes.update(nodes =>
             nodes.filter(n => n.id !== node.id).map(n =>
                 n.parentId === node.id ? { ...n, parentId: null } : n
@@ -343,6 +297,11 @@ export class WorkflowEditorComponent implements OnInit {
                     const created = await this.workflowService.createNode(dto).toPromise();
                     if (created) {
                         tempToRealId.set(node.id, created.id);
+                        // Update local ID immediately to avoid duplicate creation on retry if a later step fails
+                        this.nodes.update(nodes => nodes.map(n => n.id === node.id ? { ...n, id: created.id } : n));
+                        if (this.selectedNode()?.id === node.id) {
+                            this.selectedNode.set({ ...node, id: created.id });
+                        }
                     }
                 }
             }
@@ -413,54 +372,22 @@ export class WorkflowEditorComponent implements OnInit {
         this.nodes.update(nodes => nodes.map(n => ({ ...n, active: false })));
     }
 
-    // ==================== Helpers ====================
-
-    getNodeColor(type: WorkflowNodeType): string {
-        const item = this.toolboxItems.find(t => t.type === type);
-        return item?.color || '#6b7280';
-    }
-
-    getNodeIcon(type: WorkflowNodeType): string {
-        const item = this.toolboxItems.find(t => t.type === type);
-        return item?.icon || 'pi-circle';
-    }
-
-    getNodeLabel(type: WorkflowNodeType): string {
-        const item = this.toolboxItems.find(t => t.type === type);
-        return item?.label || type;
-    }
-
-    getConnections(): Array<{ from: EditorNode; to: EditorNode }> {
-        const allNodes = this.nodes();
-        const connections: Array<{ from: EditorNode; to: EditorNode }> = [];
-        for (const node of allNodes) {
-            if (node.parentId) {
-                const parent = allNodes.find(n => n.id === node.parentId);
-                if (parent) {
-                    connections.push({ from: parent, to: node });
-                }
+    async realExecute() {
+        if (!this.workflowId) return;
+        this.executing.set(true);
+        this.workflowService.executeWorkflow(this.workflowId, {}).subscribe({
+            next: () => {
+                this.messageService.add({ severity: 'success', summary: 'Ejecución', detail: 'Evento enviado a Inngest correctamente' });
+                this.executing.set(false);
+            },
+            error: (err) => {
+                this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo iniciar la ejecución' });
+                this.executing.set(false);
             }
-        }
-        return connections;
+        });
     }
 
-    getArrowPoints(from: EditorNode, to: EditorNode): string {
-        const x = to.x + 90;
-        const y = to.y;
-        const size = 8;
-
-        // Calcular ángulo de la línea
-        const dx = to.x + 90 - (from.x + 90);
-        const dy = to.y - (from.y + 50);
-        const angle = Math.atan2(dy, dx);
-
-        const x1 = x - size * Math.cos(angle - Math.PI / 6);
-        const y1 = y - size * Math.sin(angle - Math.PI / 6);
-        const x2 = x - size * Math.cos(angle + Math.PI / 6);
-        const y2 = y - size * Math.sin(angle + Math.PI / 6);
-
-        return `${x},${y} ${x1},${y1} ${x2},${y2}`;
-    }
+    // ==================== Helpers ====================
 
     goBack() {
         this.router.navigate(['/workflows']);

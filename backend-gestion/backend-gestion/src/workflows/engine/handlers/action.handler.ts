@@ -14,11 +14,9 @@ import { NodeHandler, WorkflowContext } from '../types';
 export class ActionHandler implements NodeHandler {
   private readonly logger = new Logger(ActionHandler.name);
 
-  // eslint-disable-next-line @typescript-eslint/require-await
   async execute(
     node: any,
     _context: WorkflowContext,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _step: any,
   ): Promise<any> {
     const config = node.config || {};

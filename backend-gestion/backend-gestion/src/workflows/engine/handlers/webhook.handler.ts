@@ -3,8 +3,6 @@ import { NodeHandler, WorkflowContext } from '../types';
 
 /**
  * WebhookHandler: Envía un POST a la URL configurada como webhook.
- * Configuración esperada en node.config:
- *   { url: string, headers?: object, payload?: any }
  */
 @Injectable()
 export class WebhookHandler implements NodeHandler {
@@ -13,7 +11,6 @@ export class WebhookHandler implements NodeHandler {
   async execute(
     node: any,
     context: WorkflowContext,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _step: any,
   ): Promise<any> {
     const config = node.config || {};

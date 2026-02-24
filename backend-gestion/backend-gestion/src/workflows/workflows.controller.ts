@@ -18,7 +18,7 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { Inngest } from 'inngest';
+import { inngest } from '../inngest/client';
 import {
   InfinityPaginationResponse,
   InfinityPaginationResponseDto,
@@ -41,7 +41,7 @@ import { WorkflowsService } from './workflows.service';
   version: '1',
 })
 export class WorkflowsController {
-  constructor(private readonly workflowsService: WorkflowsService) {}
+  constructor(private readonly workflowsService: WorkflowsService) { }
 
   // ==================== Workflow Endpoints ====================
 
@@ -94,18 +94,23 @@ export class WorkflowsController {
   @Post(':id/execute')
   @ApiParam({ name: 'id', type: String })
   async execute(@Param('id') id: string, @Body() payload: Record<string, any>) {
-    const inngest = new Inngest({ id: 'backend-gestion' });
-    await inngest.send({
-      name: 'workflow/execute',
-      data: { workflowId: id, ...payload },
-    });
-    return { message: 'Workflow execution initiated', workflowId: id };
+    console.log(`Intentando ejecutar workflow: ${id}`);
+    try {
+      await inngest.send({
+        name: 'workflow/execute',
+        data: { workflowId: id, ...payload },
+      });
+      console.log('Evento enviado exitosamente a Inngest');
+      return { message: 'Workflow execution initiated', workflowId: id };
+    } catch (error) {
+      console.error('Error enviando evento a Inngest:', error);
+      throw error;
+    }
   }
 
   @Post('webhook/:id')
   @ApiParam({ name: 'id', type: String })
   async webhook(@Param('id') id: string, @Body() payload: Record<string, any>) {
-    const inngest = new Inngest({ id: 'backend-gestion' });
     await inngest.send({
       name: 'webhook.received',
       data: { workflowId: id, payload },
@@ -146,5 +151,28 @@ export class WorkflowsController {
   @ApiParam({ name: 'id', type: String })
   removeNode(@Param('id') id: string) {
     return this.workflowsService.removeNode(id);
+  }
+
+  // ==================== Testing Endpoints ====================
+
+  @Post('test/http')
+  async testHttpNode(@Body() dto: { method: string, url: string, headers?: any, body?: any }) {
+    try {
+      const { method = 'GET', url, headers = {}, body } = dto;
+
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: method !== 'GET' && body ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
+      });
+
+      const text = await response.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = text; }
+
+      return { statusCode: response.status, data };
+    } catch (error: any) {
+      return { statusCode: 500, error: error.message };
+    }
   }
 }

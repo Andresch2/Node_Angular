@@ -1,6 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+
+import { environment } from '@/environments/environment';
 import {
     CreateWorkflowDto,
     CreateWorkflowNodeDto,
@@ -12,11 +14,9 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class WorkflowService {
-    private readonly apiUrl = 'http://localhost:3000/api/v1/workflows';
+    private readonly apiUrl = `${environment.apiUrl}/workflows`;
 
     constructor(private http: HttpClient) { }
-
-    // ===================== Workflows =====================
 
     getWorkflows(page = 1, limit = 50): Observable<{ data: Workflow[]; hasNextPage: boolean }> {
         return this.http.get<{ data: Workflow[]; hasNextPage: boolean }>(
@@ -56,6 +56,10 @@ export class WorkflowService {
 
     deleteNode(id: string): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/nodes/${id}`);
+    }
+
+    testHttpNode(config: any): Observable<any> {
+        return this.http.post(`${this.apiUrl}/test/http`, config);
     }
 
     // ===================== Execution =====================

@@ -1,4 +1,3 @@
-import { ProjectEntity } from 'src/projects/infrastructure/persistence/relational/entities/project.entity';
 import {
   Column,
   CreateDateColumn,
@@ -8,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ProjectEntity } from '../../../../../projects/infrastructure/persistence/relational/entities/project.entity';
 import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
 
 // Enum para los estados de la tarea

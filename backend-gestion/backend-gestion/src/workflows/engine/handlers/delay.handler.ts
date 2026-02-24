@@ -3,9 +3,6 @@ import { NodeHandler, WorkflowContext } from '../types';
 
 /**
  * DelayHandler: Espera un tiempo configurable antes de continuar.
- * Configuración esperada en node.config:
- *   { duration: number, unit: 'seconds' | 'minutes' | 'hours' | 'days' }
- *
  * Usa step.sleep() de Inngest para esperas durables.
  * Si no hay step disponible (ejecución local), usa setTimeout.
  */
@@ -19,7 +16,7 @@ export class DelayHandler implements NodeHandler {
     const unit = config.unit || 'seconds';
 
     // Convertir a formato Inngest sleep
-    const sleepDuration = `${duration}${unit.charAt(0)}`; // e.g. "5s", "2m", "1h", "1d"
+    const sleepDuration = `${duration}${unit.charAt(0)}`; // "5s", "2m", "1h", "1d"
 
     this.logger.log(
       `DelayHandler: esperando ${duration} ${unit} en nodo ${node.id}`,

@@ -13,7 +13,7 @@ export class NotificationHandler implements NodeHandler {
             `[Notificación] Para: ${recipient} - Mensaje: "${message}"`,
         );
 
-        // Simular un delay o llamada externa si fuera real
+        // Simular un delay
         // await new Promise(resolve => setTimeout(resolve, 500));
 
         return {

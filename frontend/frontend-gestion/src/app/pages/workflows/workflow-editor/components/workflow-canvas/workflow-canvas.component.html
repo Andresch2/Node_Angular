@@ -1,0 +1,40 @@
+<div class="editor-canvas" [class.connecting-mode]="connecting" (dragover)="onCanvasDragOver($event)"
+    (drop)="onCanvasDrop($event)" (click)="onCanvasClick()">
+    <!-- Connections (SVG Lines) -->
+    <svg class="connections-layer">
+        @for (conn of getConnections(); track conn.to.id) {
+        <line [attr.x1]="conn.from.x + 90" [attr.y1]="conn.from.y + 50" [attr.x2]="conn.to.x + 90" [attr.y2]="conn.to.y"
+            class="connection-line" [class.active-line]="conn.from.active || conn.to.active" />
+        <!-- Flecha -->
+        <polygon [attr.points]="getArrowPoints(conn.from, conn.to)" class="connection-arrow"
+            [class.active-line]="conn.from.active || conn.to.active" />
+        }
+    </svg>
+
+    <!-- Nodes -->
+    @for (node of nodes; track node.id) {
+    <div class="workflow-node" [class.selected]="node.selected" [class.active]="node.active"
+        [class.connecting-source]="connecting && connectingFromId === node.id"
+        [class.connecting-target]="connecting && connectingFromId !== node.id"
+        [ngClass]="'node-' + node.type.toLowerCase()" [style.left.px]="node.x" [style.top.px]="node.y"
+        (mousedown)="onNodeMouseDown($event, node)" (click)="onNodeClick($event, node)">
+        <div class="node-card">
+            <div class="node-header">
+                <i class="pi" [class.pi-bolt]="node.type === 'TRIGGER'" [class.pi-globe]="node.type === 'HTTP'"
+                    [class.pi-link]="node.type === 'WEBHOOK'" [class.pi-cog]="node.type === 'ACTION'"
+                    [class.pi-bell]="node.type === 'NOTIFICATION'" [class.pi-clock]="node.type === 'DELAY'"
+                    [class.pi-list]="node.type === 'FORM'"></i>
+                <span>{{ getNodeLabel(node.type) }}</span>
+            </div>
+            <div class="node-body">
+                <div class="node-name">{{ node.config?.['title'] || node.config?.['action'] || node.config?.['url'] ||
+                    getNodeLabel(node.type) }}</div>
+                <small class="node-id">{{ node.id.startsWith('temp-') ? '● Nuevo' : node.id.substring(0, 8) + '...'
+                    }}</small>
+            </div>
+        </div>
+        <!-- Connector dot -->
+        <div class="connector connector-out" (click)="onConnectorClick($event, node)" title="Conectar desde aquí"></div>
+    </div>
+    }
+</div>

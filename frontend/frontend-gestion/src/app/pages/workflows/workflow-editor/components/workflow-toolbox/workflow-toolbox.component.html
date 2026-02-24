@@ -1,0 +1,17 @@
+<div class="toolbox">
+    <h4>Nodos</h4>
+    @for (item of toolboxItems; track item.type) {
+    <div class="toolbox-item" [draggable]="true" (dragstart)="onDragStart($event, item)"
+        [style.border-left-color]="item.color">
+        <i class="pi {{ item.icon }}" [style.color]="item.color"></i>
+        <div class="toolbox-item-info">
+            <span class="toolbox-item-label">{{ item.label }}</span>
+            <span class="toolbox-item-desc">{{ item.description }}</span>
+        </div>
+    </div>
+    }
+    <div class="toolbox-hint">
+        <i class="pi pi-info-circle"></i>
+        <span>Arrastra un nodo al canvas. Haz clic en el conector inferior para conectar.</span>
+    </div>
+</div>

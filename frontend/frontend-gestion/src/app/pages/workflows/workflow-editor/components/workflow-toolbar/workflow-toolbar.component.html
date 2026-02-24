@@ -1,0 +1,22 @@
+<div class="editor-toolbar">
+    <div class="toolbar-left">
+        <p-button icon="pi pi-arrow-left" [text]="true" (onClick)="goBack.emit()" pTooltip="Volver" />
+        <h3 class="workflow-title">{{ workflow?.title || 'Cargando...' }}</h3>
+        @if (workflow?.triggerType) {
+        <p-tag [value]="workflow!.triggerType" [severity]="workflow!.triggerType === 'webhook' ? 'info' : 'success'" />
+        }
+    </div>
+    <div class="toolbar-right">
+        @if (connecting) {
+        <p-button label="Cancelar Conexión" icon="pi pi-times" severity="danger" (onClick)="cancelConnection.emit()" />
+        }
+        @if (!simulating) {
+        <p-button label="Simular" icon="pi pi-play" severity="secondary" (onClick)="startSimulation.emit()" />
+        <p-button label="Ejecutar Real" icon="pi pi-bolt" severity="warn" (onClick)="realExecute.emit()"
+            [loading]="executing" />
+        } @else {
+        <p-button label="Detener" icon="pi pi-stop" severity="danger" (onClick)="stopSimulation.emit()" />
+        }
+        <p-button label="Guardar" icon="pi pi-save" (onClick)="saveAll.emit()" [loading]="saving" />
+    </div>
+</div>

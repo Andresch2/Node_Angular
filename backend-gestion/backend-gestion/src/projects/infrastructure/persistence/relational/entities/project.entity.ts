@@ -1,6 +1,3 @@
-import { TaskEntity } from 'src/tasks/infrastructure/persistence/relational/entities/task.entity';
-import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
-import { WorkflowEntity } from 'src/workflows/infrastructure/persistence/relational/entities/workflow.entity';
 import {
   Column,
   CreateDateColumn,
@@ -10,7 +7,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { TaskEntity } from '../../../../../tasks/infrastructure/persistence/relational/entities/task.entity';
+import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
 import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
+import { WorkflowEntity } from '../../../../../workflows/infrastructure/persistence/relational/entities/workflow.entity';
 
 @Entity({
   name: 'project',

@@ -117,19 +117,20 @@ import { WorkflowService } from '../../../core/services/workflow.service';
     <p-dialog
         [(visible)]="dialogVisible"
         [modal]="true"
+        [resizable]="false"
         [style]="{ width: '480px' }"
         [header]="isEditing() ? 'Editar Workflow' : 'Nuevo Workflow'"
     >
-        <div class="flex flex-column gap-4 mt-2">
-            <div class="flex flex-column gap-2">
+        <div class="flex flex-col gap-4 mt-2">
+            <div class="flex flex-col gap-2">
                 <label for="wf-title"><strong>Título</strong></label>
-                <input pInputText id="wf-title" [(ngModel)]="formData.title" placeholder="Ej: Workflow de aprobación" />
+                <input pInputText id="wf-title" [(ngModel)]="formData.title" placeholder="Ej: Workflow de aprobación" class="w-full" />
             </div>
-            <div class="flex flex-column gap-2">
+            <div class="flex flex-col gap-2">
                 <label for="wf-desc"><strong>Descripción</strong></label>
-                <textarea pTextarea id="wf-desc" [(ngModel)]="formData.description" rows="3" placeholder="Descripción del workflow..."></textarea>
+                <textarea pTextarea id="wf-desc" [(ngModel)]="formData.description" rows="3" placeholder="Descripción del workflow..." class="w-full"></textarea>
             </div>
-            <div class="flex flex-column gap-2">
+            <div class="flex flex-col gap-2">
                 <label for="wf-trigger"><strong>Tipo de Trigger</strong></label>
                 <p-select
                     id="wf-trigger"
@@ -138,6 +139,8 @@ import { WorkflowService } from '../../../core/services/workflow.service';
                     optionLabel="label"
                     optionValue="value"
                     placeholder="Seleccionar tipo"
+                    styleClass="w-full"
+                    appendTo="body"
                 />
             </div>
         </div>

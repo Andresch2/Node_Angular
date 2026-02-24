@@ -5,4 +5,5 @@ export enum WorkflowNodeType {
   ACTION = 'ACTION',
   DELAY = 'DELAY',
   NOTIFICATION = 'NOTIFICATION',
+  FORM = 'FORM',
 }

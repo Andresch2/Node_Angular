@@ -4,6 +4,7 @@ import { WorkflowNodeType } from '../domain/workflow-node-type.enum';
 import { WorkflowNodeRepository } from '../infrastructure/persistence/workflow-node.repository';
 import { ActionHandler } from './handlers/action.handler';
 import { DelayHandler } from './handlers/delay.handler';
+import { FormHandler } from './handlers/form.handler';
 import { HttpHandler } from './handlers/http.handler';
 import { NotificationHandler } from './handlers/notification.handler';
 import { WebhookHandler } from './handlers/webhook.handler';
@@ -31,6 +32,7 @@ export class WorkflowEngineService {
     private readonly actionHandler: ActionHandler,
     private readonly delayHandler: DelayHandler,
     private readonly notificationHandler: NotificationHandler,
+    private readonly formHandler: FormHandler,
   ) {
     // Registrar handlers por tipo
     this.handlers.set(WorkflowNodeType.HTTP, this.httpHandler);
@@ -38,6 +40,7 @@ export class WorkflowEngineService {
     this.handlers.set(WorkflowNodeType.ACTION, this.actionHandler);
     this.handlers.set(WorkflowNodeType.DELAY, this.delayHandler);
     this.handlers.set(WorkflowNodeType.NOTIFICATION, this.notificationHandler);
+    this.handlers.set(WorkflowNodeType.FORM, this.formHandler);
     // TRIGGER no necesita handler: es el nodo de entrada
   }
 
