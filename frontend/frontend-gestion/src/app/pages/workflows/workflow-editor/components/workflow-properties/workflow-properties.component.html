@@ -22,6 +22,55 @@
 
     <div style="flex: 1; overflow-y: auto; padding-right: 0.25rem;">
 
+        <!-- ==================== Parent Node Data ==================== -->
+        @if (parentNode) {
+        <div class="form-section parent-data-section"
+            style="background: #1e293b; border: 1px solid #334155; border-radius: 6px; margin-bottom: 1rem; padding: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;"
+                (click)="showParentData.set(!showParentData())">
+                <h5
+                    style="margin: 0; color: #e2e8f0; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="pi pi-download" style="color: #3b82f6;"></i>
+                    INPUT ({{ getNodeLabel(parentNode.type) }})
+                </h5>
+                <i class="pi" [ngClass]="showParentData() ? 'pi-chevron-up' : 'pi-chevron-down'"
+                    style="font-size: 0.8rem; color: #94a3b8;"></i>
+            </div>
+
+            @if (showParentData()) {
+            <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-bottom: 0.25rem;">Arrastra los
+                    campos a tus inputs:</small>
+
+                @for (field of parentFields(); track field.key) {
+                <div class="parent-field-chip" draggable="true" (dragstart)="onFieldDragStart($event, field.key)"
+                    style="display: flex; align-items: center; gap: 0.5rem; background: #0f172a; padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid #334155; cursor: grab; transition: all 0.2s;">
+                    <i class="pi {{ field.icon }}" style="color: #64748b; font-size: 0.7rem;"></i>
+                    <span
+                        style="color: #e2e8f0; font-family: monospace; font-size: 0.75rem; font-weight: 600; min-width: 60px;">{{
+                        field.key }}</span>
+                    <span
+                        style="color: #94a3b8; font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                        @if (field.value) {
+                        {{ field.value.length > 30 ? field.value.substring(0, 30) + '...' : field.value }}
+                        } @else {
+                        null
+                        }
+                    </span>
+                    <i class="pi pi-arrows-alt" style="color: #475569; font-size: 0.7rem; margin-left: auto;"></i>
+                </div>
+                }
+
+                @if (parentFields().length === 0) {
+                <div style="color: #64748b; font-size: 0.75rem; font-style: italic; padding: 0.4rem;">
+                    No hay datos configurados en el nodo previo.
+                </div>
+                }
+            </div>
+            }
+        </div>
+        }
+
         <!-- ==================== HTTP Form ==================== -->
         @if (node.type === 'HTTP') {
         <div class="form-section">
@@ -30,7 +79,7 @@
                 <label>Método</label>
                 <p-select [options]="httpMethods" [ngModel]="httpMethod()"
                     (ngModelChange)="httpMethod.set($event); onFormFieldChange()" placeholder="Método"
-                    styleClass="w-full" />
+                    styleClass="w-full" appendTo="body" />
             </div>
             <div class="form-group">
                 <label>URL</label>
@@ -124,7 +173,8 @@
                 <div class="form-group flex-1">
                     <label>Unidad</label>
                     <p-select [options]="delayUnits" [ngModel]="delayUnit()"
-                        (ngModelChange)="delayUnit.set($event); onFormFieldChange()" styleClass="w-full" />
+                        (ngModelChange)="delayUnit.set($event); onFormFieldChange()" styleClass="w-full"
+                        appendTo="body" />
                 </div>
             </div>
         </div>
@@ -133,18 +183,133 @@
         <!-- ==================== Action Form ==================== -->
         @if (node.type === 'ACTION') {
         <div class="form-section">
-            <h5><i class="pi pi-cog"></i> Configuración Action</h5>
+            <h5><i class="pi pi-database"></i> Configuración de Record</h5>
+
+            <!-- Selector rápido de tablas conocidas -->
             <div class="form-group">
-                <label>Tipo de acción</label>
-                <p-select [options]="actionTypes" [ngModel]="actionType()"
-                    (ngModelChange)="actionType.set($event); onFormFieldChange()" styleClass="w-full" />
+                <label>Tabla</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem;">
+                    @for (table of knownTables; track table.value) {
+                    <span (click)="onTableSelect(table)"
+                        [style.background]="recordNombre() === table.label ? '#3b82f6' : '#1e293b'"
+                        [style.color]="recordNombre() === table.label ? '#fff' : '#94a3b8'" style="display: inline-flex; align-items: center; gap: 0.3rem;
+                               padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.78rem;
+                               cursor: pointer; border: 1px solid #334155; transition: all 0.15s; user-select: none;">
+                        <i class="pi pi-table" style="font-size: 0.7rem;"></i>{{ table.label }}
+                    </span>
+                    }
+                </div>
+                <label style="margin-top: 0.25rem;">Nombre personalizado</label>
+                <input pInputText [ngModel]="recordNombre()" (ngModelChange)="onNombreInput($event)"
+                    placeholder="O escribe un nombre personalizado..." class="w-full" />
             </div>
-            <div class="form-group">
-                <label>Mensaje / Parámetros</label>
-                <textarea pTextarea [ngModel]="actionParams()"
-                    (ngModelChange)="actionParams.set($event); onFormFieldChange()" placeholder="Mensaje a registrar..."
-                    rows="3" class="w-full"></textarea>
+
+            <!-- Endpoint (auto-rellenado al seleccionar tabla) -->
+            <div class="form-group mt-3">
+                <label>Endpoint</label>
+                <input pInputText [ngModel]="recordEndpoint()"
+                    (ngModelChange)="recordEndpoint.set($event); onFormFieldChange()" placeholder="/api/v1/users"
+                    class="w-full" />
+                <small style="color: #6b7280; font-size: 0.75rem;">
+                    Se rellena automáticamente al seleccionar una tabla.
+                </small>
             </div>
+
+            <!-- Campos del registro: inputs editables por campo -->
+            @if (recordFields().length > 0) {
+            <div class="form-group mt-3">
+                <label style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="pi pi-list" style="color: #3b82f6; font-size: 0.85rem;"></i>
+                    Datos del registro
+                </label>
+                <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.4rem;">
+                    @for (field of recordFields(); track field.key) {
+                    <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                        <label style="font-size: 0.78rem; color: #94a3b8; font-weight: 500;">
+                            {{ field.label }}
+                            <span
+                                style="font-family: monospace; color: #475569; font-size: 0.7rem; margin-left: 0.3rem;">({{
+                                field.key }})</span>
+                        </label>
+
+                        @if (field.type === 'textarea') {
+                        <textarea pTextarea [ngModel]="recordData()[field.key] || ''"
+                            (ngModelChange)="updateRecordField(field.key, $event)"
+                            [placeholder]="field.placeholder || ''" rows="2" class="w-full"
+                            style="font-size: 0.85rem;"></textarea>
+                        } @else if (field.type === 'select') {
+                        <p-select [options]="field.options || []" [ngModel]="recordData()[field.key] || ''"
+                            (ngModelChange)="updateRecordField(field.key, $event)"
+                            [placeholder]="'Selecciona ' + field.label" styleClass="w-full" appendTo="body" />
+                        } @else {
+                        <input pInputText
+                            [type]="field.type === 'email' ? 'email' : field.type === 'date' ? 'date' : 'text'"
+                            [ngModel]="recordData()[field.key] || ''"
+                            (ngModelChange)="updateRecordField(field.key, $event)"
+                            [placeholder]="field.placeholder || ''" class="w-full" style="font-size: 0.85rem;" />
+                        }
+                    </div>
+                    }
+                </div>
+                <small style="color: #6b7280; font-size: 0.72rem; margin-top: 0.4rem; display: block;">
+                    Completa los campos del registro. Los campos opcionales pueden dejarse vacíos.
+                </small>
+            </div>
+            }
+
+            <!-- Botón Probar Record -->
+            <div class="form-group mt-3">
+                <p-button label="Probar Record" icon="pi pi-play" size="small" severity="secondary"
+                    (onClick)="testActionNode()" [loading]="testingAction()" [disabled]="!recordEndpoint()" />
+            </div>
+
+            <!-- Resultados del record -->
+            @if (actionTestResult()) {
+            <div class="form-group mt-3">
+                @if (actionTestResult()!.rows && actionTestResult()!.rows!.length > 0) {
+                <!-- Tabla dinámica cuando el endpoint retorna un arreglo -->
+                <label>Resultado ({{ actionTestResult()!.rows!.length }} registro{{ actionTestResult()!.rows!.length !==
+                    1 ? 's' : '' }})</label>
+                <div style="overflow-x: auto; margin-top: 0.5rem; border-radius: 6px; border: 1px solid #334155;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; font-family: monospace;">
+                        <thead>
+                            <tr style="background: #1e293b; color: #94a3b8;">
+                                @for (col of getActionResultColumns(); track col) {
+                                <th
+                                    style="padding: 0.4rem 0.75rem; text-align: left; border-bottom: 1px solid #334155; white-space: nowrap;">
+                                    {{ col }}
+                                </th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (row of actionTestResult()!.rows!; track $index) {
+                            <tr [style.background]="$index % 2 === 0 ? '#0f172a' : '#1e293b'">
+                                @for (col of getActionResultColumns(); track col) {
+                                <td
+                                    style="padding: 0.35rem 0.75rem; color: #e2e8f0; border-bottom: 1px solid #1e293b; white-space: nowrap;">
+                                    {{ row[col] }}
+                                </td>
+                                }
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                } @else if (actionTestResult()!.rows && actionTestResult()!.rows!.length === 0) {
+                <label>Resultado</label>
+                <div
+                    style="background: #1e293b; border-radius: 6px; padding: 0.75rem; color: #94a3b8; font-size: 0.85rem; margin-top: 0.5rem;">
+                    <i class="pi pi-info-circle" style="margin-right: 0.4rem;"></i> No se encontraron registros.
+                </div>
+                } @else {
+                <!-- JSON para respuestas no tabulares -->
+                <label>Respuesta</label>
+                <textarea pTextarea [value]="actionTestResult()!.raw | json" readonly rows="6" class="w-full"
+                    style="background-color: #1e293b; color: #e2e8f0; font-family: monospace; font-size: 0.82rem; border-radius: 6px; margin-top: 0.5rem;"></textarea>
+                }
+            </div>
+            }
         </div>
         }
 
@@ -178,7 +343,7 @@
                         placeholder="Nombre del campo" style="flex: 1;" />
                     <p-select [options]="fieldTypes" [ngModel]="field.type"
                         (ngModelChange)="updateFormField($index, 'type', $event)" placeholder="Tipo"
-                        style="width: 130px;" />
+                        style="width: 130px;" appendTo="body" />
                     <label
                         style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.8rem; white-space: nowrap; cursor: pointer;">
                         <input type="checkbox" [checked]="field.required"

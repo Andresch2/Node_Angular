@@ -22,9 +22,9 @@
 
         <!-- Config Panel -->
         @if (selectedNode()) {
-        <app-workflow-properties [node]="selectedNode()!" (configChange)="updateNodeConfig($event)"
-            (connectNode)="startConnection($event)" (deleteNode)="deleteNode($event)"
-            (disconnectNode)="removeConnection($event)">
+        <app-workflow-properties [node]="selectedNode()!" [parentNode]="parentNode()"
+            (configChange)="updateNodeConfig($event)" (connectNode)="startConnection($event)"
+            (deleteNode)="deleteNode($event)" (disconnectNode)="removeConnection($event)">
         </app-workflow-properties>
         }
     </div>

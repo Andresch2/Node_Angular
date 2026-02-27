@@ -155,6 +155,11 @@ export class WorkflowsController {
 
   // ==================== Testing Endpoints ====================
 
+  @Post('test/action')
+  async testActionNode(@Body() dto: { nombre?: string; endpoint?: string; json?: any }) {
+    return this.workflowsService.testAction(dto);
+  }
+
   @Post('test/http')
   async testHttpNode(@Body() dto: { method: string, url: string, headers?: any, body?: any }) {
     try {

@@ -48,6 +48,13 @@ export class WorkflowEditorComponent implements OnInit {
     executing = signal(false);
     simulationIndex = signal(0);
 
+    // Nodo padre del seleccionado actualmente
+    parentNode = computed<EditorNode | null>(() => {
+        const selected = this.selectedNode();
+        if (!selected || !selected.parentId) return null;
+        return this.nodes().find(n => n.id === selected.parentId) || null;
+    });
+
     // IDs de nodos eliminados (para borrar del backend al guardar)
     deletedNodeIds: string[] = [];
 

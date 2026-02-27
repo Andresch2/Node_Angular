@@ -6,6 +6,7 @@ import { CreateWorkflowNodeDto } from './dto/create-workflow-node.dto';
 import { CreateWorkflowDto } from './dto/create-workflow.dto';
 import { UpdateWorkflowNodeDto } from './dto/update-workflow-node.dto';
 import { UpdateWorkflowDto } from './dto/update-workflow.dto';
+import { ActionHandler } from './engine/handlers/action.handler';
 import { WorkflowNodeRepository } from './infrastructure/persistence/workflow-node.repository';
 import { WorkflowRepository } from './infrastructure/persistence/workflow.repository';
 
@@ -14,6 +15,7 @@ export class WorkflowsService {
   constructor(
     private readonly workflowRepository: WorkflowRepository,
     private readonly workflowNodeRepository: WorkflowNodeRepository,
+    private readonly actionHandler: ActionHandler,
   ) { }
 
   // ==================== Workflow CRUD ====================
@@ -95,5 +97,19 @@ export class WorkflowsService {
 
   removeNode(id: WorkflowNode['id']) {
     return this.workflowNodeRepository.remove(id);
+  }
+
+  // ==================== Testing ====================
+
+  async testAction(dto: { nombre?: string; endpoint?: string; json?: any }) {
+    const node = {
+      id: 'test',
+      config: {
+        nombre: dto.nombre || 'Test',
+        endpoint: dto.endpoint || '',
+        json: dto.json || {},
+      },
+    };
+    return this.actionHandler.execute(node as any, {} as any, null);
   }
 }

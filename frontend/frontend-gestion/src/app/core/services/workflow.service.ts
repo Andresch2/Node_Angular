@@ -62,6 +62,10 @@ export class WorkflowService {
         return this.http.post(`${this.apiUrl}/test/http`, config);
     }
 
+    testAction(config: { nombre?: string; endpoint?: string; json?: any }): Observable<any> {
+        return this.http.post(`${this.apiUrl}/test/action`, config);
+    }
+
     // ===================== Execution =====================
 
     executeWorkflow(id: string, payload: any = {}): Observable<any> {

@@ -1,18 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { NodeHandler, WorkflowContext } from '../types';
 
 /**
- * ActionHandler: Ejecuta acciones genéricas extensibles.
- * Configuración esperada en node.config:
- *   { action: string, params?: any }
- * Acciones predefinidas:
- *   - 'log': registra mensaje en logs
- *   - 'transform': transforma datos del contexto
- *   - default: registra la acción y continúa
+ * ActionHandler: Ejecuta acciones basadas en registros.
+ * Lee los datos directamente de la BD usando el nombre de la tabla interna.
+
  */
 @Injectable()
 export class ActionHandler implements NodeHandler {
   private readonly logger = new Logger(ActionHandler.name);
+
+  constructor(@InjectDataSource() private readonly dataSource: DataSource) { }
 
   async execute(
     node: any,
@@ -20,35 +20,83 @@ export class ActionHandler implements NodeHandler {
     _step: any,
   ): Promise<any> {
     const config = node.config || {};
-    const action = config.action || 'default';
-    const params = config.params || {};
+    const nombre = config.nombre || 'Sin nombre';
+    const json = config.json || {};
+    const tableName: string = json.table || '';
+    const fields: string[] = json.fields || [];
+    const data: Record<string, any> = config.data || {};
 
     this.logger.log(
-      `ActionHandler: ejecutando acción "${action}" en nodo ${node.id}`,
+      `ActionHandler: ejecutando record "${nombre}" → tabla "${tableName}" en nodo ${node.id}`,
     );
 
-    switch (action) {
-      case 'log':
-        this.logger.log(`ActionHandler LOG: ${JSON.stringify(params)}`);
+    if (!tableName) {
+      return {
+        status: 'success',
+        nombre,
+        message: 'Sin tabla configurada. Selecciona una tabla en el editor.',
+        data: json,
+      };
+    }
+
+    try {
+      // Filtrar datos vacíos del form
+      const dataToInsert = Object.entries(data).reduce((acc, [key, val]) => {
+        if (val !== '' && val !== null && val !== undefined) {
+          acc[key] = val;
+        }
+        return acc;
+      }, {} as Record<string, any>);
+
+      if (Object.keys(dataToInsert).length > 0) {
+        // Ejecutar INSERT
+        const keys = Object.keys(dataToInsert);
+        const values = Object.values(dataToInsert);
+
+        const columns = keys.map(k => `"${k}"`).join(', ');
+        const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+
+        const insertQuery = `INSERT INTO "${tableName}" (${columns}) VALUES (${placeholders}) RETURNING *`;
+        const result = await this.dataSource.query(insertQuery, values);
+
+        // Si devuelve el registro insertado, lo adjuntamos como data
+        const insertedRow = Array.isArray(result) && result.length > 0 ? result[0] : result;
+
         return {
           status: 'success',
-          action: 'log',
-          message: params.message || 'logged',
+          nombre,
+          table: tableName,
+          data: insertedRow,
+          recordData: data,
         };
+      } else {
+        // Construir la proyección solo de campos seguros para SELECT
+        const safeFields = fields.length > 0
+          ? fields.map(f => `"${f}"`).join(', ')
+          : '*';
 
-      case 'transform':
-        // Ejemplo: transformar datos del contexto
+        const query = `SELECT ${safeFields} FROM "${tableName}" LIMIT 100`;
+        const rows = await this.dataSource.query(query);
+
+        // Si no se proporcionaron datos, enviar los datos vacíos
         return {
           status: 'success',
-          action: 'transform',
-          data: { ..._context, ...params },
+          nombre,
+          table: tableName,
+          data: rows,
+          recordData: data,
         };
-
-      default:
-        this.logger.log(
-          `ActionHandler: acción genérica "${action}" completada`,
-        );
-        return { status: 'success', action, params };
+      }
+    } catch (error: any) {
+      this.logger.error(
+        `Error en ActionHandler record "${nombre}" (tabla: ${tableName}): ${error.message}`,
+      );
+      return {
+        status: 'error',
+        nombre,
+        table: tableName,
+        message: error.message,
+      };
     }
   }
 }
