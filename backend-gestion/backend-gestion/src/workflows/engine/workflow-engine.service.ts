@@ -7,8 +7,7 @@ import { DelayHandler } from './handlers/delay.handler';
 import { FormHandler } from './handlers/form.handler';
 import { HttpHandler } from './handlers/http.handler';
 import { NotificationHandler } from './handlers/notification.handler';
-import { SetHandler } from './handlers/set.handler';
-import { WebhookHandler } from './handlers/webhook.handler';
+
 import { NodeHandler, WorkflowContext } from './types';
 
 /**
@@ -29,22 +28,18 @@ export class WorkflowEngineService {
   constructor(
     private readonly workflowNodeRepository: WorkflowNodeRepository,
     private readonly httpHandler: HttpHandler,
-    private readonly webhookHandler: WebhookHandler,
     private readonly databaseHandler: DatabaseHandler,
-    private readonly setHandler: SetHandler,
     private readonly delayHandler: DelayHandler,
     private readonly notificationHandler: NotificationHandler,
     private readonly formHandler: FormHandler,
   ) {
     // Registrar handlers por tipo
     this.handlers.set(WorkflowNodeType.HTTP, this.httpHandler);
-    this.handlers.set(WorkflowNodeType.WEBHOOK, this.webhookHandler);
     this.handlers.set(WorkflowNodeType.DATABASE, this.databaseHandler);
-    this.handlers.set(WorkflowNodeType.SET, this.setHandler);
     this.handlers.set(WorkflowNodeType.DELAY, this.delayHandler);
     this.handlers.set(WorkflowNodeType.NOTIFICATION, this.notificationHandler);
     this.handlers.set(WorkflowNodeType.FORM, this.formHandler);
-    // TRIGGER no necesita handler: es el nodo de entrada
+    // TRIGGER y WEBHOOK no necesitan handler: son nodos de entrada
   }
 
   /**
@@ -172,7 +167,15 @@ export class WorkflowEngineService {
       this.logger.log(
         `Nodo ${node.id} (${node.type}): sin handler, continuando`,
       );
-      results[node.id] = { status: 'passed', type: node.type };
+
+      const nodeResult: any = { status: 'passed', type: node.type };
+
+      // Pasar el webhookPayload al resultado de este nodo (memoria global)
+      if (node.type === 'WEBHOOK' && context.webhookPayload) {
+        nodeResult.data = { webhookPayload: context.webhookPayload };
+      }
+
+      results[node.id] = nodeResult;
     }
 
     // Guardar el resultado en la memoria global del contexto

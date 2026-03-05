@@ -66,10 +66,6 @@ export class WorkflowService {
         return this.http.post(`${this.apiUrl}/test/database`, config);
     }
 
-    testWebhook(config: { url: string; payload?: any; headers?: any }): Observable<any> {
-        return this.http.post(`${this.apiUrl}/test/webhook`, config);
-    }
-
     testNotification(config: { url?: string; recipient: string; message: string }): Observable<any> {
         return this.http.post(`${this.apiUrl}/test/notification`, config);
     }

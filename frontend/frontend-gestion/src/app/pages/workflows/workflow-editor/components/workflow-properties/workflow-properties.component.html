@@ -5,7 +5,15 @@
         <p-tag [value]="getNodeLabel(node.type)" [style]="{ background: getNodeColor(node.type) }" />
     </div>
     <div class="config-section config-meta">
-        <div><label>ID</label><small>{{ node.id.substring(0, 12) }}...</small></div>
+        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+            <label>ID</label>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <small style="font-family: monospace; word-break: break-all; font-size: 0.75rem; color: #94a3b8;">{{
+                    node.id }}</small>
+                <i class="pi pi-copy" style="cursor: pointer; font-size: 0.75rem; color: #64748b;"
+                    (click)="copyToClipboard(node.id)" pTooltip="Copiar ID"></i>
+            </div>
+        </div>
         <div><label>Posición</label><small>X: {{ node.x | number:'1.0-0' }}, Y: {{ node.y | number:'1.0-0' }}</small>
         </div>
     </div>
@@ -13,7 +21,10 @@
     <div class="config-section">
         <label>Padre</label>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <small>{{ node.parentId.substring(0, 8) }}...</small>
+            <small style="font-family: monospace; word-break: break-all; font-size: 0.75rem; color: #94a3b8;">{{
+                node.parentId }}</small>
+            <i class="pi pi-copy" style="cursor: pointer; font-size: 0.75rem; color: #64748b;"
+                (click)="copyToClipboard(node.parentId!)" pTooltip="Copiar ID Padre"></i>
             <p-button icon="pi pi-times" size="small" [text]="true" severity="danger"
                 (onClick)="disconnectNode.emit(node)" pTooltip="Desconectar" />
         </div>
@@ -42,30 +53,34 @@
                 <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-bottom: 0.25rem;">Arrastra a
                     tus inputs:</small>
 
-                @for (field of panel.fields; track field.key) {
-                <div class="parent-field-chip" draggable="true" (dragstart)="onFieldDragStart($event, field.dragText)"
-                    style="display: flex; align-items: center; gap: 0.5rem; background: #0f172a; padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid #334155; cursor: grab; transition: all 0.2s;">
-                    <i class="pi {{ field.icon }}" style="color: #64748b; font-size: 0.7rem;"></i>
-                    <span
-                        style="color: #e2e8f0; font-family: monospace; font-size: 0.75rem; font-weight: 600; min-width: 60px;">{{
-                        field.key }}</span>
-                    <span
-                        style="color: #94a3b8; font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
-                        @if (field.value) {
-                        {{ field.value.length > 30 ? field.value.substring(0, 30) + '...' : field.value }}
-                        } @else {
-                        null
-                        }
-                    </span>
-                    <i class="pi pi-arrows-alt" style="color: #475569; font-size: 0.7rem; margin-left: auto;"></i>
+                <div
+                    style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 0.5rem; max-height: 250px; overflow-y: auto;">
+                    <p-tree [value]="panel.treeNodes"
+                        [style]="{'background': 'transparent', 'border': 'none', 'color': '#e2e8f0', 'padding': '0'}">
+                        <ng-template let-node pTemplate="default">
+                            <div [class.parent-field-chip]="node.leaf" [attr.draggable]="node.leaf ? 'true' : null"
+                                (dragstart)="node.leaf ? onFieldDragStart($event, node.data.path) : null"
+                                style="display: flex; align-items: center; gap: 0.5rem; width: 100%; transition: all 0.2s;"
+                                [style.cursor]="node.leaf ? 'grab' : 'default'">
+                                <i [class]="node.icon" style="color: #64748b; font-size: 0.75rem;"></i>
+                                <span
+                                    style="font-family: monospace; color: #e2e8f0; font-size: 0.8rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">
+                                    {{ node.label }}
+                                </span>
+                                @if (node.data?.type) {
+                                <span [ngStyle]="getTypeBadgeStyle(node.data.type)"
+                                    style="font-size: 0.60rem; padding: 0.1rem 0.3rem; border-radius: 4px; font-weight: 600; margin-left: auto;">
+                                    {{ node.data.type }}
+                                </span>
+                                }
+                                @if (node.leaf) {
+                                <i class="pi pi-arrows-alt"
+                                    style="color: #475569; font-size: 0.7rem; margin-left: 0.4rem;"></i>
+                                }
+                            </div>
+                        </ng-template>
+                    </p-tree>
                 </div>
-                }
-
-                @if (panel.fields.length === 0) {
-                <div style="color: #64748b; font-size: 0.75rem; font-style: italic; padding: 0.4rem;">
-                    No hay campos configurados en este nodo.
-                </div>
-                }
             </div>
             }
         </div>
@@ -96,10 +111,6 @@
         @case ('FORM') {
         <app-form-properties [node]="node" [availableAncestors]="availableAncestors"
             (configChange)="onConfigChangeFromChild($event)"></app-form-properties>
-        }
-        @case ('SET') {
-        <app-set-properties [node]="node" [availableAncestors]="availableAncestors"
-            (configChange)="onConfigChangeFromChild($event)"></app-set-properties>
         }
         @case ('TRIGGER') {
         <div class="form-section">

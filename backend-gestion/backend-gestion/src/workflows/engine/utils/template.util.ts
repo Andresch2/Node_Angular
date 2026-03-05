@@ -18,7 +18,7 @@ export class TemplateUtil {
         return payload;
       }
 
-      return obj.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (match, path) => {
+      return obj.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (match, path) => {
         const value = this.getValueByPath(context, path);
 
         // Tolerar valores nulos o indefinidos devolviendo cadena vacía (o manejándolo adecuadamente)

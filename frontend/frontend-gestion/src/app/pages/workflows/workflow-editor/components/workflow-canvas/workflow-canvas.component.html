@@ -22,8 +22,8 @@
             <div class="node-header">
                 <i class="pi" [class.pi-bolt]="node.type === 'TRIGGER'" [class.pi-globe]="node.type === 'HTTP'"
                     [class.pi-link]="node.type === 'WEBHOOK'" [class.pi-database]="node.type === 'DATABASE'"
-                    [class.pi-tags]="node.type === 'SET'" [class.pi-bell]="node.type === 'NOTIFICATION'"
-                    [class.pi-clock]="node.type === 'DELAY'" [class.pi-list]="node.type === 'FORM'"></i>
+                    [class.pi-bell]="node.type === 'NOTIFICATION'" [class.pi-clock]="node.type === 'DELAY'"
+                    [class.pi-list]="node.type === 'FORM'"></i>
                 <span>{{ getNodeLabel(node.type) }}</span>
             </div>
             <div class="node-body">

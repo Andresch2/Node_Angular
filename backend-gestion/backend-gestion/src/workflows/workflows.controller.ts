@@ -112,16 +112,6 @@ export class WorkflowsController {
     }
   }
 
-  @Post('webhook/:id')
-  @ApiParam({ name: 'id', type: String })
-  async webhook(@Param('id') id: string, @Body() payload: Record<string, any>) {
-    await inngest.send({
-      name: 'webhook.received',
-      data: { workflowId: id, payload },
-    });
-    return { status: 'received', workflowId: id };
-  }
-
   // ==================== WorkflowNode Endpoints ====================
 
   @Post('nodes')
@@ -205,37 +195,6 @@ export class WorkflowsController {
     };
     const fakeContext = { workflowId: 'test' };
     return this.databaseHandler.execute(fakeNode, fakeContext, null);
-  }
-
-  @Post('test/webhook')
-  async testWebhookNode(
-    @Body() dto: { url: string; payload?: any; headers?: any },
-  ) {
-    try {
-      const { url, payload = {}, headers = { 'Content-Type': 'application/json' } } = dto;
-
-      if (!url) {
-        return { status: 'error', message: 'URL es requerida' };
-      }
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
-
-      const text = await response.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = text;
-      }
-
-      return { status: 'success', statusCode: response.status, data };
-    } catch (error: any) {
-      return { status: 'failed', error: error.message };
-    }
   }
 
   @Post('test/notification')

@@ -29,11 +29,12 @@ import { WorkflowService } from '../../../../../../core/services/workflow.servic
       </div>
       @if (httpMethod() !== 'GET') {
       <div class="form-group">
-          <label>Body (JSON)</label>
+          <label>Body</label>
           <textarea pTextarea [ngModel]="httpBody()" (ngModelChange)="httpBody.set($event); onFieldChange()"
-              placeholder='{ "key": "value" }' rows="4" class="w-full"></textarea>
+              [placeholder]="placeholderBody" rows="4" class="w-full"
+              style="font-family: monospace;"></textarea>
           <small style="display: block; margin-top: 0.5rem; color: #6b7280; font-size: 0.75rem; line-height: 1.2;">
-              <i>Tip:</i> Usa <code ngNonBindable>&#123;&#123; variable &#125;&#125;</code> para inyectar datos del disparador.<br>
+              <i>Tip:</i> Usa <code ngNonBindable>&#123;&#123; nodes.ID.data.variable &#125;&#125;</code> para inyectar datos dinámicos.<br>
               Envía <code ngNonBindable>"&#123;&#123; __FULL_PAYLOAD__ &#125;&#125;"</code> para retransmitir todo.
           </small>
       </div>
@@ -42,7 +43,26 @@ import { WorkflowService } from '../../../../../../core/services/workflow.servic
           <label>Headers (JSON) <small class="optional">opcional</small></label>
           <textarea pTextarea [ngModel]="httpHeaders()"
               (ngModelChange)="httpHeaders.set($event); onFieldChange()"
-              placeholder='{ "Authorization": "Bearer ..." }' rows="3" class="w-full"></textarea>
+              placeholder='{ "Authorization": "Bearer ..." }' rows="3" class="w-full"
+              style="font-family: monospace;"></textarea>
+      </div>
+
+      <div class="form-group" style="margin-top: 1.5rem;">
+          <label style="font-weight: 600; margin-bottom: 0.5rem; display: block; color: #e2e8f0;">
+              <i class="pi pi-code" style="margin-right: 0.3rem;"></i> JSON Resultante (Esquema de Variables)
+          </label>
+          <textarea pTextarea [ngModel]="sampleJsonText()" (ngModelChange)="onSampleJsonChange($event)"
+              placeholder='{ "id": 123, "data": "test" }' rows="6" class="w-full"
+              style="background: #0f172a; border: 1px solid #334155; color: #e2e8f0; font-family: monospace;"></textarea>
+          @if (jsonError()) {
+              <small style="color: #ef4444; font-size: 0.75rem; display: block; margin-top: 0.4rem;">
+                  <i class="pi pi-exclamation-triangle"></i> Formato JSON inválido.
+              </small>
+          } @else {
+              <small style="color: #64748b; font-size: 0.75rem; display: block; margin-top: 0.4rem;">
+                  Puedes probar la petición arriba y se guardará automáticamente aquí.
+              </small>
+          }
       </div>
 
       <div class="form-group mt-3">
@@ -72,6 +92,9 @@ export class HttpPropertiesComponent implements OnChanges {
     httpUrl = signal('');
     httpBody = signal('');
     httpHeaders = signal('');
+    sampleJsonText = signal('');
+    jsonError = signal(false);
+    placeholderBody = '{ "key": "{{ nodes.ID.data.variable }}" }';
 
     testingHttp = signal(false);
     httpTestResult = signal('');
@@ -91,16 +114,47 @@ export class HttpPropertiesComponent implements OnChanges {
             this.httpBody.set(config['body'] ? (typeof config['body'] === 'string' ? config['body'] : JSON.stringify(config['body'], null, 2)) : '');
             this.httpHeaders.set(config['headers'] ? (typeof config['headers'] === 'string' ? config['headers'] : JSON.stringify(config['headers'], null, 2)) : '');
             this.httpTestResult.set('');
+
+            if (config['sampleJson']) {
+                this.sampleJsonText.set(typeof config['sampleJson'] === 'string' ? config['sampleJson'] : JSON.stringify(config['sampleJson'], null, 2));
+            } else {
+                this.sampleJsonText.set('');
+            }
+        }
+    }
+
+    onSampleJsonChange(val: string) {
+        this.sampleJsonText.set(val);
+        try {
+            if (val.trim() === '') {
+                this.jsonError.set(false);
+                this.onFieldChange();
+                return;
+            }
+            JSON.parse(val);
+            this.jsonError.set(false);
+            this.onFieldChange();
+        } catch {
+            this.jsonError.set(true);
         }
     }
 
     onFieldChange() {
+        let sampleJson = null;
+        if (this.sampleJsonText().trim() !== '' && !this.jsonError()) {
+            try { sampleJson = JSON.parse(this.sampleJsonText()); } catch { }
+        }
+
         const config = {
             method: this.httpMethod(),
             url: this.httpUrl(),
             ...(this.httpMethod() !== 'GET' && this.httpBody() ? { body: this.safeParseJson(this.httpBody()) } : {}),
             ...(this.httpHeaders() ? { headers: this.safeParseJson(this.httpHeaders()) } : {}),
+            sampleJson
         };
+        // Clean out undefined
+        if (!sampleJson) delete config.sampleJson;
+
         this.configChange.emit(config);
     }
 
@@ -123,8 +177,14 @@ export class HttpPropertiesComponent implements OnChanges {
 
         this.workflowService.testHttpNode(config).subscribe({
             next: (res) => {
-                this.httpTestResult.set(JSON.stringify(res.data, null, 2));
+                const responseJsonStr = JSON.stringify(res.data, null, 2);
+                this.httpTestResult.set(responseJsonStr);
                 this.testingHttp.set(false);
+
+                // --- AUTO SAVE THE RESPONSE TO SAMPLE JSON ---
+                this.sampleJsonText.set(responseJsonStr);
+                this.jsonError.set(false);
+                this.onFieldChange();
             },
             error: (err) => {
                 const errMsg = err.error?.error || err.message || 'Error en la petición';

@@ -16,7 +16,6 @@ const TOOLBOX_DESCRIPTIONS: Record<WorkflowNodeType, string> = {
     [WorkflowNodeType.HTTP]: 'Llamada API',
     [WorkflowNodeType.WEBHOOK]: 'Enviar datos',
     [WorkflowNodeType.DATABASE]: 'Operaciones DB',
-    [WorkflowNodeType.SET]: 'Asignar variables',
     [WorkflowNodeType.NOTIFICATION]: 'Enviar mensaje',
     [WorkflowNodeType.DELAY]: 'Esperar tiempo',
     [WorkflowNodeType.FORM]: 'Pedir información',

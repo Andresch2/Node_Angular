@@ -3,7 +3,6 @@ export enum WorkflowNodeType {
     HTTP = 'HTTP',
     WEBHOOK = 'WEBHOOK',
     DATABASE = 'DATABASE',
-    SET = 'SET',
     DELAY = 'DELAY',
     NOTIFICATION = 'NOTIFICATION',
     FORM = 'FORM',
