@@ -15,10 +15,10 @@ import { WorkflowService } from '../../../../../../core/services/workflow.servic
     imports: [CommonModule, FormsModule, InputTextModule, TextareaModule, SelectModule, ButtonModule],
     template: `
     <div class="form-section">
-        <h5><i class="pi pi-globe"></i> HTTP (Postman Style)</h5>
+        <h5><i class="pi pi-globe"></i> HTTP </h5>
 
         <div class="flex flex-col gap-1 w-full mb-3">
-            <label>Método</label>
+            <label>Metodo</label>
             <p-select [options]="httpMethods" [ngModel]="httpMethod()"
                 (ngModelChange)="httpMethod.set($event); emitConfig()"
                 styleClass="w-full" appendTo="body" />

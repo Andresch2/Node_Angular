@@ -72,10 +72,20 @@ export class AuthService {
 
   private checkAuth(): void {
     const token = this.getToken();
-    if (token) {
-      this.getMe().subscribe({
-        error: () => this.logout()
-      });
+
+    if (!token) {
+      this.isAuthenticated.set(false);
+      return;
     }
+
+    this.getMe().subscribe({
+      next: (user) => {
+        this.currentUser.set(user);
+        this.isAuthenticated.set(true);
+      },
+      error: () => {
+        this.isAuthenticated.set(false);
+      }
+    });
   }
 }

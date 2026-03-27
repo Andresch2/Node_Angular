@@ -18,6 +18,8 @@ export interface NodeResult {
  */
 export interface WorkflowContext {
   workflowId: string;
+  executionId: string;
+  initialNodeId?: string;
   /** Datos de entrada global al workflow */
   input?: any;
   /** Shortcut: datos del nodo padre inmediato */

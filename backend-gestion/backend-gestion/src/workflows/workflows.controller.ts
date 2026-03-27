@@ -236,8 +236,8 @@ export class WorkflowsController {
         data: dto.data,
       },
     };
-    const fakeContext = { workflowId: 'test', nodes: {}, $node: {} };
-    return this.databaseHandler.execute(fakeNode, fakeContext, null);
+    const fakeContext = { workflowId: 'test', executionId: 'test-exec', nodes: {}, $node: {} };
+    return this.databaseHandler.execute(fakeNode, fakeContext as any, null);
   }
 
   @Post('test/notification')

@@ -53,9 +53,21 @@ export class WorkflowEngineService {
 
     const initialPayload = this.resolveInitialPayload(initialContext);
 
+    // El executionId debe ser determinista para que Inngest no lo cambie en cada replay
+    let executionId = initialContext?.executionId;
+    if (!executionId && step?.run) {
+      executionId = await step.run('generate-execution-id', () =>
+        `ex_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`
+      );
+    } else if (!executionId) {
+      executionId = `ex_${Date.now()}_local`;
+    }
+
     const context: WorkflowContext = {
-      workflowId,
       ...initialContext,
+      workflowId,
+      executionId,
+      initialNodeId: initialContext?.initialNodeId,
       nodes: initialContext?.nodes ?? {},
       $node: initialContext?.$node ?? {},
       $globals: {
@@ -67,6 +79,8 @@ export class WorkflowEngineService {
       webhookPayload: initialContext?.webhookPayload,
       webhook: initialContext?.webhook,
     };
+
+    this.logger.log(`DEBUG: executionId=${executionId}, initialNodeId=${context.initialNodeId}, keys in $json=${Object.keys(context.$json || {}).join(',')}`);
 
     let executionOrder: WorkflowNode[];
 
@@ -151,6 +165,18 @@ export class WorkflowEngineService {
 
       // Alias adicional por id, útil para depurar
       nodeRegistry[node.id] = nodeResult;
+
+      // Acumular datos de nodos FORM en $globals para que plantillas downstream
+      // puedan resolver {{ mi_campo }} sin importar si viene del Form1 o Form2.
+      if (node.type === WorkflowNodeType.FORM && nodeResult.data && typeof nodeResult.data === 'object') {
+        context.$globals = {
+          ...(context.$globals ?? {}),
+          ...nodeResult.data,
+        };
+        this.logger.debug(
+          `Datos de FORM [${node.id}] fusionados en $globals: ${JSON.stringify(Object.keys(nodeResult.data))}`,
+        );
+      }
     }
 
     this.logger.log(
@@ -173,8 +199,8 @@ export class WorkflowEngineService {
     if (initialContext['data'] !== undefined) return initialContext['data'];
 
     // 2. Fallback: Si el objeto mismo tiene datos, es el payload
-    // Filtramos workflowId para no ensuciar los datos del negocio
-    const { workflowId, ...rest } = initialContext as any;
+    // Filtramos metadatos del motor para no ensuciar los datos del negocio
+    const { workflowId, initialNodeId, executionId, ...rest } = initialContext as any;
     if (Object.keys(rest).length > 0) return rest;
 
     return Object.keys(initialContext).length > 0 ? initialContext : {};
@@ -307,7 +333,7 @@ export class WorkflowEngineService {
 
       try {
         let result: NodeResult;
-        if (node.type === WorkflowNodeType.DELAY) {
+        if (node.type === WorkflowNodeType.DELAY || node.type === WorkflowNodeType.FORM) {
           result = await handler.execute(node, nodeContext, step);
         } else if (step?.run) {
           result = await step.run(`node-${node.id}`, async () => {
@@ -375,8 +401,15 @@ export class WorkflowEngineService {
       return aggregated;
     }
 
-    // Fallback para Nodos Raíz (Trigger): Devolver los datos iniciales
-    return context.$json || context.input || {};
+    // Devolver los datos iniciales solo si corresponde
+    const isExplicitTrigger = context.initialNodeId === node.id;
+    const isGlobalStart = !context.initialNodeId;
+
+    if (isExplicitTrigger || isGlobalStart) {
+      return context.$json || context.input || {};
+    }
+
+    return {};
   }
 
   private resolveTriggerData(

@@ -68,5 +68,6 @@ export const appRoutes: Routes = [
     { path: 'landing', component: Landing },
     { path: 'notfound', component: Notfound },
     { path: 'auth', loadChildren: () => import('./app/pages/auth/auth.routes') },
+    { path: 'form/:nodeId', loadComponent: () => import('./app/pages/workflows/public-form/public-form.component').then(m => m.PublicFormComponent) },
     { path: '**', redirectTo: '/notfound' }
 ];

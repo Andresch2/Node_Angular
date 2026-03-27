@@ -153,6 +153,24 @@ export function getInngestFunctions(deps: InngestDeps) {
     },
   );
 
+  // 8. Formulario enviado ejecuta workflow
+  const onFormSubmitted = inngest.createFunction(
+    { id: 'on-form-submitted' },
+    { event: 'workflow.form_submitted' },
+    async ({ event, step }) => {
+      const { workflowId, nodeId, payload } = event.data;
+
+      // Este listener solo se activa para envíos INICIALES.
+      // El FormController se encarga de enviar el evento genérico solo cuando
+      // no existe executionId, por lo que aquí siempre iniciamos una nueva ejecución.
+      return workflowEngineService.executeWorkflow(workflowId, step, {
+        ...payload,
+        $json: payload,
+        initialNodeId: nodeId,
+      });
+    },
+  );
+
   return [
     executeWorkflow,
     onWebhookReceived,
@@ -161,5 +179,6 @@ export function getInngestFunctions(deps: InngestDeps) {
     onTaskCompleted,
     onProjectCreated,
     onProjectUpdated,
+    onFormSubmitted,
   ];
 }

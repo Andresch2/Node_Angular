@@ -48,13 +48,16 @@ export class TemplateUtil {
     const path = this.normalizePath(expr);
     if (!path) return undefined;
 
+    // Prioridad absoluta para variables de sistema
+    if (path === 'executionId') return context.executionId;
+    if (path === 'workflowId') return context.workflowId;
+    if (path === 'initialNodeId') return context.initialNodeId;
+
     let result = this.getValueByPath(context, path);
-    
-    // Fallback: If not found and doesn't start with $, try to resolve from $json
     if (result === undefined && !path.startsWith('$')) {
       result = this.getValueByPath(context.$json, path);
     }
-    
+
     // Fallback: Try to resolve from $node (e.g., HTTP_Request_1.correo -> $node.HTTP_Request_1.data.correo)
     if (result === undefined && !path.startsWith('$') && context.$node) {
       const parts = path.split('.');
@@ -65,39 +68,46 @@ export class TemplateUtil {
       }
     }
 
-    // NEW Fallback: Deep search by key if the path is a single word
     if (result === undefined && !path.includes('.') && !path.startsWith('$')) {
-       result = this.deepSearchKey(context.$json, path);
-       if (result === undefined && context.$node) {
-          for (const nodeKey of Object.keys(context.$node)) {
-             result = this.deepSearchKey(context.$node[nodeKey].data, path);
-             if (result !== undefined) break;
-          }
-       }
+      // 1. Buscar en $globals (acumula datos de todos los FORMs ejecutados)
+      if (result === undefined && context.$globals) {
+        result = this.deepSearchKey(context.$globals, path);
+      }
+      // 2. Buscar en $json (datos del nodo padre inmediato)
+      if (result === undefined) {
+        result = this.deepSearchKey(context.$json, path);
+      }
+      // 3. Buscar en cada nodo acumulado en $node
+      if (result === undefined && context.$node) {
+        for (const nodeKey of Object.keys(context.$node)) {
+          result = this.deepSearchKey(context.$node[nodeKey].data, path);
+          if (result !== undefined) break;
+        }
+      }
     }
 
     return result;
   }
 
   private deepSearchKey(obj: any, keyToFind: string): any {
-     if (!obj || typeof obj !== 'object') return undefined;
-     if (keyToFind in obj) return obj[keyToFind];
-     
-     if (Array.isArray(obj)) {
-         for (const item of obj) {
-             const result = this.deepSearchKey(item, keyToFind);
-             if (result !== undefined) return result;
-         }
-         return undefined;
-     }
+    if (!obj || typeof obj !== 'object') return undefined;
+    if (keyToFind in obj) return obj[keyToFind];
 
-     for (const key of Object.keys(obj)) {
-        if (obj[key] && typeof obj[key] === 'object') {
-           const result = this.deepSearchKey(obj[key], keyToFind);
-           if (result !== undefined) return result;
-        }
-     }
-     return undefined;
+    if (Array.isArray(obj)) {
+      for (const item of obj) {
+        const result = this.deepSearchKey(item, keyToFind);
+        if (result !== undefined) return result;
+      }
+      return undefined;
+    }
+
+    for (const key of Object.keys(obj)) {
+      if (obj[key] && typeof obj[key] === 'object') {
+        const result = this.deepSearchKey(obj[key], keyToFind);
+        if (result !== undefined) return result;
+      }
+    }
+    return undefined;
   }
 
   private getValueByPath(obj: any, path: string): any {

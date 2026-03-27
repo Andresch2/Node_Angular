@@ -156,9 +156,13 @@ export class WorkflowPropertiesComponent implements OnChanges, OnInit, OnDestroy
             });
         }
 
-        for (const ancestor of this.getUniqueAncestors()) {
+        const ancestors = this.getUniqueAncestors();
+        for (const ancestor of ancestors) {
+            // Evitar duplicar el parentNode si ya está como shortcut
+            if (this.parentNode && ancestor.id === this.parentNode.id) continue;
+
             const schema = this.resolveNodeSchema(ancestor);
-            const basePath = ''; // Se usa ruta directa que mapea a resolucion profunda  
+            const basePath = ''; 
             const treeNodes = this.buildTreeWithBase(schema, '', basePath);
 
             panels.push({

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild } from '@angular/core';
 import { EditorNode, WorkflowConnection, WorkflowNodeType } from '../../../../../core/models/workflow.model';
-import { getNodeIcon, getNodeLabel } from '../../utils/workflow-node.utils';
+import { getNodeColor, getNodeIcon, getNodeLabel } from '../../utils/workflow-node.utils';
 
 @Component({
     selector: 'app-workflow-canvas',
@@ -102,11 +102,13 @@ export class WorkflowCanvasComponent {
         const start = this.getConnectorPosition(from, true, handle);
         const end = this.getConnectorPosition(to, false);
 
-        // Control points for Bézier curve
+        const dist = Math.abs(end.y - start.y);
+        const verticalOffset = Math.min(Math.max(dist / 2, 40), 100);
+
         const cp1x = start.x;
-        const cp1y = start.y + 60;
+        const cp1y = start.y + verticalOffset;
         const cp2x = end.x;
-        const cp2y = end.y - 60;
+        const cp2y = end.y - verticalOffset;
 
         return `M ${start.x} ${start.y} C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${end.x} ${end.y}`;
     }
@@ -118,7 +120,6 @@ export class WorkflowCanvasComponent {
             return { x: node.x + nodeWidth / 2, y: node.y };
         }
 
-        // Source position depends on handle
         let xOffset = 0.5; // Center
 
         if (node.type === WorkflowNodeType.IF) {
@@ -153,8 +154,11 @@ export class WorkflowCanvasComponent {
         const start = this.getConnectorPosition(from, true, handle);
         const end = this.getConnectorPosition(to, false);
 
-        const cp1y = start.y + 60;
-        const cp2y = end.y - 60;
+        const dist = Math.abs(end.y - start.y);
+        const verticalOffset = Math.min(Math.max(dist / 2, 40), 100);
+
+        const cp1y = start.y + verticalOffset;
+        const cp2y = end.y - verticalOffset;
 
         return {
             x: (start.x + 3 * start.x + 3 * end.x + end.x) / 8,
@@ -179,5 +183,9 @@ export class WorkflowCanvasComponent {
 
     getNodeDisplayName(node: EditorNode): string {
         return node.name || node.config?.['title'] || node.config?.['action'] || node.config?.['url'] || getNodeLabel(node.type);
+    }
+
+    getNodeColor(type: WorkflowNodeType): string {
+        return getNodeColor(type);
     }
 }

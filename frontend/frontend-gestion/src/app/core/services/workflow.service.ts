@@ -110,6 +110,20 @@ export class WorkflowService {
         return this.http.post(`${this.apiUrl}/test/notification`, config);
     }
 
+    // ==================== Form Public Endpoints ====================
+
+    getFormConfig(nodeId: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/form/${nodeId}`);
+    }
+
+    submitForm(nodeId: string, payload: any, executionId?: string): Observable<any> {
+        const body = { 
+            ...payload, 
+            executionId 
+        };
+        return this.http.post(`${this.apiUrl}/form/${nodeId}/submit`, body);
+    }
+
     // ==================== Execution ====================
 
     executeWorkflow(id: string, payload: any = {}): Observable<any> {

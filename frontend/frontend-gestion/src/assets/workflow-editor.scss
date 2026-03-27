@@ -186,55 +186,98 @@ $wf-accent-light: rgba(99, 102, 241, 0.15);
         left: 0;
         width: 100%;
         height: 100%;
-        pointer-events: none; // SVG itself is transparent
+        pointer-events: none;
         overflow: visible;
-        z-index: 20; // Above nodes
+        z-index: 20;
 
-        .delete-link {
-            opacity: 1 !important;
-            cursor: pointer;
-            pointer-events: all;
-            
-            circle {
-                fill: #ef4444;
-                stroke: white;
-                stroke-width: 2;
-                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-                transition: fill 0.2s ease; // Transition only the color
-            }
+        .connection-group {
+            pointer-events: none;
 
             &:hover {
-                circle {
-                    fill: #dc2626;
+                .connection-line {
+                    stroke-width: 3.5;
+                    opacity: 0.8;
+                    stroke: $wf-accent;
+                }
+
+                .delete-link {
+                    opacity: 1;
+                    pointer-events: all;
+                }
+            }
+
+            &.active-group {
+                .connection-line {
+                    stroke: $wf-accent;
+                    stroke-width: 4;
+                    opacity: 1;
+                    stroke-dasharray: 8, 5;
+                    animation: wf-line-flow 0.8s linear infinite;
                 }
             }
         }
 
+        .connection-hit-area {
+            cursor: pointer;
+            pointer-events: stroke;
+            stroke: transparent;
+            stroke-width: 15;
+            fill: none;
+        }
+
         .connection-line {
             fill: none !important;
-            stroke: var(--text-color-secondary);
-            stroke-width: 3;
+            stroke: #94a3b8;
+            stroke-width: 2.5;
             stroke-linecap: round;
-            opacity: 0.4;
-            pointer-events: none; // Line doesn't block nodes
+            opacity: 0.6;
+            pointer-events: none;
+            transition: all 0.2s ease;
 
             &.active-line {
                 stroke: $wf-accent;
-                stroke-width: 4;
                 opacity: 0.9;
             }
         }
 
-        .connection-arrow {
-            fill: var(--text-color-secondary);
-            opacity: 0.4;
-            pointer-events: none;
+        .delete-link {
+            opacity: 0 !important;
+            cursor: pointer;
+            pointer-events: none !important;
+            transition: opacity 0.2s ease;
 
-            &.active-line {
-                fill: $wf-accent;
-                opacity: 0.9;
+            circle {
+                fill: #ef4444;
+                stroke: white;
+                stroke-width: 1.5;
+                filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2));
+            }
+
+            path {
+                stroke-width: 2 !important;
+            }
+
+            &:hover circle {
+                fill: #dc2626;
             }
         }
+    }
+
+    .connection-group:hover {
+        .delete-link {
+            opacity: 1 !important;
+            pointer-events: all !important;
+        }
+    }
+}
+
+@keyframes wf-line-flow {
+    from {
+        stroke-dashoffset: 20;
+    }
+
+    to {
+        stroke-dashoffset: 0;
     }
 }
 
@@ -735,6 +778,7 @@ $wf-accent-light: rgba(99, 102, 241, 0.15);
 }
 
 // Ensure the border transitions smoothly back
-input, textarea {
+input,
+textarea {
     transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 }
