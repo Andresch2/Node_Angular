@@ -32,7 +32,7 @@ export class WorkflowsService {
     private readonly databaseConfigRepo: Repository<WorkflowDatabaseConfig>,
   ) { }
 
-  // ==================== Configuration ====================
+  // Configuración
 
   async getDatabaseConfigs() {
     return this.databaseConfigRepo.find({
@@ -41,7 +41,7 @@ export class WorkflowsService {
     });
   }
 
-  // ==================== Workflow CRUD ====================
+  // CRUD de Workflow
 
   async create(dto: CreateWorkflowDto, user: Workflow['user']) {
     const triggerType = dto.triggerType;
@@ -107,7 +107,7 @@ export class WorkflowsService {
     return workflows.filter((w) => w.eventName === eventName);
   }
 
-  // ==================== WorkflowNode CRUD ====================
+  // CRUD de Nodos de Workflow
 
   async createNode(dto: CreateWorkflowNodeDto) {
     const workflow = await this.workflowRepository.findById(dto.workflowId);
@@ -184,7 +184,7 @@ export class WorkflowsService {
     return this.workflowNodeRepository.remove(id);
   }
 
-  // ==================== WorkflowConnection CRUD ====================
+  // CRUD de Conexiones de Workflow
 
   async createConnection(
     dto: CreateWorkflowConnectionDto,
@@ -249,7 +249,7 @@ export class WorkflowsService {
     return this.workflowConnectionRepository.removeByWorkflowId(workflowId);
   }
 
-  // ==================== Helpers ====================
+  // Funciones Auxiliares
 
   private resolveEventName(
     triggerType: string | undefined,
@@ -328,7 +328,7 @@ export class WorkflowsService {
     }
   }
 
-  // ==================== Connections Validations ====================
+  // Validaciones de Conexiones
 
   private checkConnectionValidity(
     connections: WorkflowConnection[],

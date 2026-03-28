@@ -96,7 +96,7 @@ export class IfPropertiesComponent implements OnChanges {
             const savedConditions = config['conditions'] || [];
             
             if (savedConditions.length === 0) {
-                // Add one default empty condition if none exists
+                // Agregar una condición vacía por defecto si no existe ninguna
                 this.conditions.set([{ value1: '', operation: 'stringEquals', value2: '' }]);
             } else {
                 this.conditions.set(savedConditions);

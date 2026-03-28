@@ -107,8 +107,8 @@ export class WorkflowPropertiesComponent implements OnChanges, OnInit, OnDestroy
         const target = event.target as HTMLElement | null;
         if (!target) return;
 
-        // Skip adding class to the inputs inside the data explorer itself (like search if we had one)
-        // Only target inputs inside the config/properties left section.
+        // Evitar agregar la clase a los inputs dentro del propio explorador de datos (como la búsqueda si tuviéramos una)
+        // Solo aplicar a los inputs dentro de la sección izquierda de configuración/propiedades.
         const isFromProperties = !!target.closest('.properties-column');
 
         if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
@@ -237,16 +237,16 @@ export class WorkflowPropertiesComponent implements OnChanges, OnInit, OnDestroy
 
     onCdkDragEnd(event: CdkDragEnd, path: string, label?: string) {
         const dropPoint = event.dropPoint;
-        // Find the element at the drop coordinates
+        // Encontrar el elemento en las coordenadas donde se soltó
         const el = document.elementFromPoint(dropPoint.x, dropPoint.y) as HTMLElement;
         
         if (!el) return;
         
-        // Find the closest input or textarea
+        // Encontrar el input o textarea más cercano
         const inputOrTextarea = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' ? el : el.querySelector('input, textarea');
         
         if (inputOrTextarea && (inputOrTextarea instanceof HTMLInputElement || inputOrTextarea instanceof HTMLTextAreaElement)) {
-            // Check if it's inside the properties column so we don't drop in random places
+            // Verificar si está dentro de la columna de propiedades para no soltar en lugares aleatorios
             if (!inputOrTextarea.closest('.properties-column')) return;
 
             const insertText = label ? `{{ ${label} }}` : `{{ ${path} }}`;

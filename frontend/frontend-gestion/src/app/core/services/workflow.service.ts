@@ -1,8 +1,7 @@
 import { environment } from '@/environments/environment';
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Observable, of, tap } from 'rxjs';
-import { signal, computed } from '@angular/core';
 import {
     CreateWorkflowConnectionDto,
     CreateWorkflowDto,
@@ -17,15 +16,15 @@ import {
 @Injectable({ providedIn: 'root' })
 export class WorkflowService {
     private readonly apiUrl = `${environment.apiUrl}/workflows`;
-    
-    // Shared state for database catalog
+
+    // Estado compartido del catálogo de base de datos
     private _catalog = signal<any[]>([]);
     readonly databaseCatalog = this._catalog.asReadonly();
     private catalogLoaded = false;
 
     constructor(private http: HttpClient) { }
 
-    // ==================== Configuration ====================
+    // Configuración
 
     getDatabaseCatalog(): Observable<any[]> {
         if (this.catalogLoaded) {
@@ -39,7 +38,7 @@ export class WorkflowService {
         );
     }
 
-    // ==================== Workflow CRUD ====================
+    // CRUD de workflows
 
     getWorkflows(page = 1, limit = 50): Observable<{ data: Workflow[]; hasNextPage: boolean }> {
         return this.http.get<{ data: Workflow[]; hasNextPage: boolean }>(`${this.apiUrl}?page=${page}&limit=${limit}`);
@@ -61,7 +60,7 @@ export class WorkflowService {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
 
-    // ==================== Node CRUD ====================
+    // CRUD de nodos
 
     getNodesByWorkflowId(workflowId: string): Observable<WorkflowNode[]> {
         return this.http.get<WorkflowNode[]>(`${this.apiUrl}/${workflowId}/nodes`);
@@ -79,7 +78,7 @@ export class WorkflowService {
         return this.http.delete<void>(`${this.apiUrl}/nodes/${id}`);
     }
 
-    // ==================== Connection CRUD ====================
+    // CRUD de conexiones
 
     getConnectionsByWorkflowId(workflowId: string): Observable<WorkflowConnection[]> {
         return this.http.get<WorkflowConnection[]>(`${this.apiUrl}/${workflowId}/connections`);
@@ -96,7 +95,7 @@ export class WorkflowService {
         return this.http.delete<void>(`${this.apiUrl}/connections/${id}`);
     }
 
-    // ==================== Test ====================
+    // Pruebas
 
     testHttpNode(config: any): Observable<any> {
         return this.http.post(`${this.apiUrl}/test/http`, config);
@@ -110,21 +109,21 @@ export class WorkflowService {
         return this.http.post(`${this.apiUrl}/test/notification`, config);
     }
 
-    // ==================== Form Public Endpoints ====================
+    // Endpoints públicos de formularios
 
     getFormConfig(nodeId: string): Observable<any> {
         return this.http.get(`${this.apiUrl}/form/${nodeId}`);
     }
 
     submitForm(nodeId: string, payload: any, executionId?: string): Observable<any> {
-        const body = { 
-            ...payload, 
-            executionId 
+        const body = {
+            ...payload,
+            executionId
         };
         return this.http.post(`${this.apiUrl}/form/${nodeId}/submit`, body);
     }
 
-    // ==================== Execution ====================
+    // Ejecución
 
     executeWorkflow(id: string, payload: any = {}): Observable<any> {
         return this.http.post(`${this.apiUrl}/${id}/execute`, payload);

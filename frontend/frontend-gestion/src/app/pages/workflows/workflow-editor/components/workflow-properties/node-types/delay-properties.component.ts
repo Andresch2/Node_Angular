@@ -159,7 +159,7 @@ export class DelayPropertiesComponent implements OnChanges {
                 this.resumeMode.set(config['resumeMode'] || 'interval');
             }
 
-            // Duration
+            // Duración
             const rawDuration = config['duration'];
             const durationHasBraces = typeof rawDuration === 'string' && String(rawDuration).includes('{{');
 
@@ -168,7 +168,7 @@ export class DelayPropertiesComponent implements OnChanges {
             }
             this.delayDuration.set(rawDuration ?? 5);
 
-            // Date
+            // Fecha
             const rawDate = config['dateTime'];
             const dateHasBraces = typeof rawDate === 'string' && String(rawDate).includes('{{');
 
@@ -192,7 +192,7 @@ export class DelayPropertiesComponent implements OnChanges {
         let finalDuration = this.delayDuration();
         let finalDateTime = this.delayDateTime();
 
-        // Ensure date is ISO if not expression
+        // Asegurar que la fecha sea ISO si no es una expresión
         if (finalDateTime instanceof Date) {
             finalDateTime = finalDateTime.toISOString();
         }

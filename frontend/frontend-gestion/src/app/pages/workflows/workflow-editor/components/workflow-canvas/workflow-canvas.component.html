@@ -1,12 +1,13 @@
 <div #editorCanvas class="editor-canvas" [class.connecting-mode]="connecting" (dragover)="onCanvasDragOver($event)"
     (drop)="onCanvasDrop($event)" (click)="onCanvasClick()">
-    <!-- Layer 1: Nodes -->
+
     @for (node of nodes; track node.id) {
     <div class="workflow-node" [class.selected]="node.selected" [class.active]="node.active"
         [class.connecting-source]="connecting && connectingFromId === node.id"
         [class.connecting-target]="connecting && connectingFromId !== node.id"
         [ngClass]="'node-' + node.type.toLowerCase()" [style.left.px]="node.x" [style.top.px]="node.y"
         (mousedown)="onNodeMouseDown($event, node)" (click)="onNodeClick($event, node)">
+
         <div class="node-card">
             <div class="node-header">
                 <i class="pi" [ngClass]="getNodeIcon(node.type)"></i>
@@ -18,14 +19,14 @@
                     }}</small>
             </div>
         </div>
-        <!-- Connector dot -->
+
         @if (node.type !== 'IF') {
         <div class="connector connector-out" (click)="onConnectorClick($event, node)" title="Conectar desde aquí"></div>
         } @else {
         <div class="connector connector-out connector-true" (click)="onConnectorClick($event, node, 'true')"
-            title="Conectar rama Verdadera (True)"></div>
+            title="Conectar rama Verdadera"></div>
         <div class="connector connector-out connector-false" (click)="onConnectorClick($event, node, 'false')"
-            title="Conectar rama Falsa (False)"></div>
+            title="Conectar rama Falsa"></div>
         }
     </div>
     }

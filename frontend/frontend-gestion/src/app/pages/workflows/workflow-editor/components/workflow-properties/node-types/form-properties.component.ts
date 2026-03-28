@@ -285,7 +285,7 @@ export class FormPropertiesComponent implements OnChanges {
             this.formDescription.set(description);
             this.formSuccessMsg.set(successMsg);
 
-            // Import existing fields
+            // Importar campos existentes
             const incomingFields = Array.isArray(config['fields']) ? config['fields'] : [];
             const mappedFields: FormField[] = incomingFields.map((field: any) => ({
                 name: String(field?.name || ''),
@@ -295,7 +295,7 @@ export class FormPropertiesComponent implements OnChanges {
                 mode: field?.mode || 'fixed'
             }));
 
-            // If we have legacy top-level values but no corresponding fields, add them
+            // Si tenemos valores heredados de nivel superior pero sin campos correspondientes, los agregamos
             if (title && !mappedFields.some(f => f.type === 'title')) {
                 mappedFields.unshift({ name: 'title', type: 'title', value: title, mode: title.includes('{{') ? 'expression' : 'fixed' });
             }
@@ -361,7 +361,7 @@ export class FormPropertiesComponent implements OnChanges {
     onFieldChange() {
         const fields = this.formFields();
         
-        // Sync special fields back to top-level for backward compatibility
+        // Sincronizar campos especiales de vuelta al nivel superior para retrocompatibilidad
         const titleField = fields.find(f => f.type === 'title');
         const descField = fields.find(f => f.type === 'description');
         const successField = fields.find(f => f.type === 'successMsg');

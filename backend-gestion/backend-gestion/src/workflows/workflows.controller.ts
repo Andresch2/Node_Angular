@@ -49,7 +49,7 @@ export class WorkflowsController {
     private readonly databaseHandler: DatabaseHandler,
   ) { }
 
-  // ==================== Configuration Endpoints ====================
+  // Endpoints de Configuración
 
   @Get('database/configs')
   @ApiOkResponse({ description: 'Devuelve la configuración dinámica de tablas para nodos Database' })
@@ -57,7 +57,7 @@ export class WorkflowsController {
     return this.workflowsService.getDatabaseConfigs();
   }
 
-  // ==================== Workflow Endpoints ====================
+  // Endpoints de Workflow
 
   @Post()
   @ApiCreatedResponse({ type: Workflow })
@@ -103,7 +103,7 @@ export class WorkflowsController {
     return this.workflowsService.remove(id);
   }
 
-  // ==================== Execution Endpoints ====================
+  // Endpoints de Ejecución
 
   @Post(':id/execute')
   @ApiParam({ name: 'id', type: String })
@@ -127,7 +127,7 @@ export class WorkflowsController {
     }
   }
 
-  // ==================== WorkflowNode Endpoints ====================
+  // Endpoints de Nodos de Workflow
 
   @Post('nodes')
   @ApiCreatedResponse({ type: WorkflowNode })
@@ -162,7 +162,7 @@ export class WorkflowsController {
     return this.workflowsService.removeNode(id);
   }
 
-  // ==================== WorkflowConnection Endpoints ====================
+  // Endpoints de Conexiones de Workflow
 
   @Post(':workflowId/connections')
   @ApiParam({ name: 'workflowId', type: String })
@@ -188,7 +188,7 @@ export class WorkflowsController {
     return this.workflowsService.removeConnection(id);
   }
 
-  // ==================== Test Endpoints ====================
+  // Endpoints de Prueba
 
   @Post('test/http')
   async testHttpNode(

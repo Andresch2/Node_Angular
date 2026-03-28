@@ -4,7 +4,6 @@ import { TemplateUtil } from '../utils/template.util';
 
 /**
  * NotificationHandler: Envía notificaciones vía HTTP POST.
- * Compatible con Slack, Discord, o cualquier webhook.
  */
 @Injectable()
 export class NotificationHandler implements NodeHandler {

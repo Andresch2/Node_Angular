@@ -36,8 +36,6 @@ export interface TableRecord {
     json: Record<string, any>;
 }
 
-// DATABASE_TABLES is now dynamic through catalog
-
 @Component({
     selector: 'app-database-properties',
     standalone: true,
@@ -251,8 +249,8 @@ export class DatabasePropertiesComponent implements OnInit, OnChanges {
     recordFields = signal<FieldDef[]>([]);
     recordData = signal<Record<string, any>>({});
     recordJson = signal<Record<string, any>>({});
-    
-    availableRecords = signal<{label: string, value: string}[]>([]);
+
+    availableRecords = signal<{ label: string, value: string }[]>([]);
     loadingRecords = signal(false);
 
     onOperationChange(op: string) {

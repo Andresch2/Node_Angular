@@ -93,7 +93,7 @@ export class WorkflowEditorComponent implements OnInit {
             return this.topologicalSort(allNodes, conns);
         }
 
-        // Fallback legacy: DFS por parentId
+        // Alternativa heredada: DFS por parentId
         const root = allNodes.find(n => !n.parentId);
         if (!root) return [];
         const order: EditorNode[] = [];
@@ -159,7 +159,7 @@ export class WorkflowEditorComponent implements OnInit {
         });
     }
 
-    // ==================== Toolbox Drag & Drop ====================
+    // Arrastrar y Soltar
 
     onToolboxDragStart(event: { event: DragEvent, item: ToolboxItem }) {
         this.messageService.add({ severity: 'info', summary: 'Arrastrando', detail: `Agregando nodo ${event.item.label}` });
@@ -209,7 +209,7 @@ export class WorkflowEditorComponent implements OnInit {
         this.nodes.update(nodes => [...nodes, newNode]);
     }
 
-    // ==================== Node Handling ====================
+    // Manejo de Nodos
 
     updateNodePosition(event: { id: string, x: number, y: number }) {
         this.nodes.update(nodes =>
@@ -217,7 +217,7 @@ export class WorkflowEditorComponent implements OnInit {
         );
     }
 
-    // ==================== Selection ====================
+    // Selección
 
     removeConnection(connectionId: string) {
         console.log('Editor: Removiendo conexión:', connectionId);
@@ -230,7 +230,7 @@ export class WorkflowEditorComponent implements OnInit {
             this.deletedConnectionIds.push(conn.id);
         }
 
-        // Update parentId if this was the only connection
+        // Actualizar parentId si esta era la única conexión
         const remaining = this.connections().filter(c => c.targetNodeId === conn.targetNodeId);
         if (remaining.length === 0) {
             this.nodes.update(nodes =>
@@ -263,7 +263,7 @@ export class WorkflowEditorComponent implements OnInit {
         this.selectedNode.set(null);
     }
 
-    // ==================== Connections (Graph-Based) ====================
+    // Conexiones (Basadas en Grafo)
 
     startConnection(event: { node: EditorNode, handle?: string } | EditorNode) {
         const node = 'node' in event ? event.node : event;
@@ -284,7 +284,7 @@ export class WorkflowEditorComponent implements OnInit {
             return;
         }
 
-        // Check for duplicate connection
+        // Verificar si existe una conexión duplicada
         const existing = this.connections().find(
             c => c.sourceNodeId === fromId && c.targetNodeId === targetNode.id
         );
@@ -296,7 +296,7 @@ export class WorkflowEditorComponent implements OnInit {
             return;
         }
 
-        // Create a temp connection
+        // Crear una conexión temporal
         const tempConn: WorkflowConnection = {
             id: 'temp-conn-' + Date.now(),
             workflowId: this.workflowId,
@@ -309,7 +309,7 @@ export class WorkflowEditorComponent implements OnInit {
 
         this.connections.update(conns => [...conns, tempConn]);
 
-        // Also set parentId for backward compatibility
+        // También establecer parentId para retrocompatibilidad
         this.nodes.update(nodes =>
             nodes.map(n => n.id === targetNode.id ? { ...n, parentId: fromId } : n),
         );
@@ -319,7 +319,7 @@ export class WorkflowEditorComponent implements OnInit {
         this.connectingSourceHandle.set(null);
         this.messageService.add({ severity: 'success', summary: 'Conectado', detail: 'Nodos conectados correctamente' });
 
-        // Refresh selectedNode
+        // Actualizar nodo seleccionado
         if (this.selectedNode()?.id === targetNode.id) {
             const updated = this.nodes().find(n => n.id === targetNode.id);
             if (updated) this.selectedNode.set({ ...updated });
@@ -333,7 +333,7 @@ export class WorkflowEditorComponent implements OnInit {
     }
 
     removeConnectionByNode(node: EditorNode) {
-        // Remove all connections FROM or TO this node
+        // Eliminar todas las conexiones DESDE o HACIA este nodo
         const nodeConns = this.connections().filter(
             c => c.sourceNodeId === node.id || c.targetNodeId === node.id
         );
@@ -342,7 +342,7 @@ export class WorkflowEditorComponent implements OnInit {
         }
     }
 
-    // ==================== Config Editing ====================
+    // Edición de Configuración
 
     updateNodeConfig(config: Record<string, any>) {
         const node = this.selectedNode();
@@ -373,7 +373,7 @@ export class WorkflowEditorComponent implements OnInit {
         const node = this.selectedNode();
         if (!node) return;
 
-        // Validate uniqueness
+        // Validar que el nombre sea único
         const duplicate = this.nodes().find(n => n.name === name && n.id !== node.id);
         if (duplicate) {
             this.messageService.add({ severity: 'warn', summary: 'Nombre duplicado', detail: `Ya existe un nodo llamado "${name}"` });
@@ -389,10 +389,10 @@ export class WorkflowEditorComponent implements OnInit {
         }
     }
 
-    // ==================== Delete Node ====================
+    // Eliminar Nodo
 
     deleteNode(node: EditorNode) {
-        // Remove all connections to/from this node
+        // Eliminar todas las conexiones hacia/desde este nodo
         this.removeConnectionByNode(node);
 
         this.nodes.update(nodes =>
@@ -410,7 +410,7 @@ export class WorkflowEditorComponent implements OnInit {
         }
     }
 
-    // ==================== Save ====================
+    // Guardar
 
     async saveAll() {
         this.saving.set(true);
@@ -503,7 +503,7 @@ export class WorkflowEditorComponent implements OnInit {
         }
     }
 
-    // ==================== Simulation ====================
+    // Simulación
 
     startSimulation() {
         const order = this.simulationOrder();
@@ -580,9 +580,9 @@ export class WorkflowEditorComponent implements OnInit {
         });
     }
 
-    // ==================== Helpers ====================
+    // Funciones Auxiliares
 
-    /** Topological sort for connections (Kahn's algorithm) */
+    /** Ordenamiento topológico para conexiones (Algoritmo de Kahn) */
     private topologicalSort(nodes: EditorNode[], connections: WorkflowConnection[]): EditorNode[] {
         const nodeMap = new Map<string, EditorNode>();
         const inDegree = new Map<string, number>();
@@ -622,7 +622,7 @@ export class WorkflowEditorComponent implements OnInit {
         return sorted;
     }
 
-    /** Calculate ancestors from the graph using connections */
+    /** Calcular ancestros del grafo usando conexiones */
     calculateAncestorsFromGraph(nodeId: string, visited: Set<string> = new Set()): EditorNode[] {
         if (visited.has(nodeId)) return [];
         visited.add(nodeId);
@@ -631,18 +631,18 @@ export class WorkflowEditorComponent implements OnInit {
         const allNodes = this.nodes();
         const ancestors: EditorNode[] = [];
 
-        // Find all nodes that connect INTO this node
+        // Encontrar todos los nodos que se conectan HACIA este nodo
         const incoming = conns.filter(c => c.targetNodeId === nodeId);
         for (const conn of incoming) {
             const sourceNode = allNodes.find(n => n.id === conn.sourceNodeId);
             if (sourceNode) {
-                // Recursively get ancestors of the source node first
+                // Obtener recursivamente los ancestros del nodo origen primero
                 const deeper = this.calculateAncestorsFromGraph(sourceNode.id, visited);
                 ancestors.push(...deeper, sourceNode);
             }
         }
 
-        // Fallback to parentId when no connections
+        // Usar parentId como alternativa cuando no hay conexiones
         if (incoming.length === 0) {
             const node = allNodes.find(n => n.id === nodeId);
             if (node?.parentId) {
